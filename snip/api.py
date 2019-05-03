@@ -3,6 +3,8 @@ import termios
 import fcntl
 
 import click
+import pyperclip
+
 
 from snip import storage
 from snip import prompt
@@ -19,6 +21,13 @@ def list():
 
 def add(content, description):
     storage.add_snippet(content, description)
+
+
+def cp():
+    snippet = _query_snippet()
+    if not snippet:
+        return
+    _snippet_to_clipboard(snippet)
 
 
 def rm():
@@ -62,3 +71,6 @@ def _put_text_tty(text):
         fcntl.ioctl(tty, termios.TIOCSTI, char)
 
     termios.tcsetattr(tty, termios.TCSANOW, old_attr)
+
+def _snippet_to_clipboard(snippet):
+    pyperclip.copy(snippet.content)
