@@ -1,5 +1,6 @@
 import click
 
+
 from snip import api
 
 
@@ -7,29 +8,46 @@ from snip import api
 @click.pass_context
 def cli(ctx):
     if ctx.invoked_subcommand is None:
-        run()
+        get()
 
 
 @cli.command()
 @click.argument('content', type=str, nargs=-1)
 @click.option('--description', prompt=True)
-def add(content, description):
-    api.add(' '.join(content), description)
+@click.option('--name', prompt=True)
+def add(content, description, name):
+    content = ' '.join(content)
+    if name == '':
+        api.add(content, description)
+    else:
+        api.add(content, description, name)
 
 
 @cli.command()
-def rm():
-    api.rm()
+@click.argument('name', default=None, required=False)
+def rm(name):
+    try:
+        api.rm(name)
+    except LookupError as e:
+        click.echo(str(e))
 
 
 @cli.command()
-def list():
-    api.list()
+@click.argument('name', default=None, required=False)
+def cp(name):
+    try:
+        api.cp(name)
+    except LookupError as e:
+        click.echo(str(e))
 
 
 @cli.command()
-def cp():
-    api.cp()
+@click.argument('name', default=None, required=False)
+def get(name):
+    try:
+        api.get(name)
+    except LookupError as e:
+        click.echo(str(e))
 
 
 @cli.command()
@@ -38,8 +56,8 @@ def clear():
 
 
 @cli.command()
-def run():
-    api.run()
+def list():
+    api.list()
 
 
 if __name__ == '__main__':

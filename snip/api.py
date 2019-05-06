@@ -7,7 +7,7 @@ import pyperclip
 
 
 from snip import storage
-from snip import prompt
+from snip.prompt import prompt
 
 
 def list():
@@ -19,35 +19,46 @@ def list():
         click.echo('_' * 50)
 
 
-def add(content, description):
-    storage.add_snippet(content, description)
+def add(content, description, name):
+    storage.add_snippet(content, description, name)
 
 
-def cp():
-    snippet = _query_snippet()
-    if not snippet:
-        return
+def cp(name=None):
+    try:
+        snippet = _get_snippet(name)
+    except (FileNotFoundError, LookupError):
+        raise LookupError('Snippet not found.')
     _snippet_to_clipboard(snippet)
 
 
-def rm():
-    snippet = _query_snippet()
-    if not snippet:
-        return
+def rm(name=None):
+    try:
+        snippet = _get_snippet(name)
+    except (FileNotFoundError, LookupError):
+        raise LookupError('Snippet not found')
     storage.rm_snippet(snippet)
 
 
-def clear():
+def get(name=None):
+    try:
+        snippet = _get_snippet(name)
+    except (FileNotFoundError, LookupError):
+        raise LookupError('Snippet not found')
+    _put_text_tty(snippet.content)
+
+
+def clear(name=None):
     msg = 'You are about to clear all your saved snippets, are you sure?'
     if prompt.confirm(msg):
         storage.clear_snippets()
 
 
-def run():
-    snippet = _query_snippet()
-    if not snippet:
-        return
-    _put_text_tty(snippet.content)
+def _get_snippet(name=None):
+    if not name:
+        snippet = _query_snippet()
+    else:
+        snippet = storage.get_snippet(name)
+    return snippet
 
 
 def _query_snippet():
@@ -57,6 +68,7 @@ def _query_snippet():
     for snippet in snippets:
         if snippet.content == snippet_content:
             return snippet
+    raise LookupError('Could not find snippet')
 
 
 def _put_text_tty(text):
