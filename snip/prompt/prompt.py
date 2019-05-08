@@ -1,10 +1,11 @@
-from prompt_toolkit.completion import Completer, Completion, FuzzyCompleter
+from prompt_toolkit.completion import Completer, Completion, FuzzyCompleter, WordCompleter
 from prompt_toolkit.lexers import DynamicLexer
 from prompt_toolkit.shortcuts import prompt, PromptSession
 from prompt_toolkit.shortcuts.prompt import _split_multiline_prompt, CompleteStyle
 from prompt_toolkit import print_formatted_text, HTML
 from prompt_toolkit.layout import HSplit, Window
 from prompt_toolkit.layout.menus import _get_menu_item_fragments
+from prompt_toolkit.formatted_text import to_formatted_text
 from prompt_toolkit.application import Application
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.clipboard import DynamicClipboard
@@ -192,12 +193,12 @@ class SnippetCompleter(Completer):
     def __init__(self, descriptions):
         super(SnippetCompleter).__init__()
         self._descriptions = descriptions
+        self._compl = WordCompleter(descriptions)
+        self._fzy_completer = FuzzyCompleter(self._compl)
 
-    def get_completions(self, document, complete_event):
-        word = document.get_word_before_cursor()
-        for desc in self._descriptions:
-            if desc.startswith(word):
-                yield Completion(desc,
-                                 start_position=-len(word),
-                                 style='fg:white bg:black',
-                                 selected_style='fg:green bg:#000005')
+    def get_completions(self, doc, event):
+        # Hack for fuzzy completer to add selected_style
+        for completion in self._fzy_completer.get_completions(doc, event):
+            completion.style = 'fg:white bg:black'
+            completion.selected_style = 'fg:white bg:green'
+            yield completion
