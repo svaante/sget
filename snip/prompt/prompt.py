@@ -1,5 +1,7 @@
 from prompt_toolkit.completion import Completer, Completion, FuzzyCompleter, WordCompleter
+from prompt_toolkit.completion.fuzzy_completer import _FuzzyMatch
 from prompt_toolkit.lexers import DynamicLexer
+from prompt_toolkit.document import Document
 from prompt_toolkit.shortcuts import prompt, PromptSession
 from prompt_toolkit.shortcuts.prompt import _split_multiline_prompt, CompleteStyle
 from prompt_toolkit import print_formatted_text, HTML
@@ -46,13 +48,32 @@ from prompt_toolkit.layout.processors import (
 )
 
 from functools import partial
+import re
 
 
 def select_snippet(snippets):
     snippet_completer = SnippetCompleter(snippets)
     session = SplitPromptSession()
-    desc = session.prompt(HTML('<b>> </b>'), completer=snippet_completer)
-    return desc
+    snippet_meta = session.prompt(HTML('> '), completer=snippet_completer)
+    snippet_meta, _ = _strip_prefix(snippet_meta)
+    snippet_meta = snippet_meta.strip()
+    for snippet in snippets:
+        if _match(snippet, snippet_meta):
+            return snippet
+
+
+def _strip_prefix(word):
+    prefix = word[0:2]
+    if len(prefix) < 2 or prefix not in SnippetCompleter.CATEGORY_PREFIXES:
+        return word, ''
+    else:
+        return word[2:], prefix
+
+
+def _match(snippet, snippet_meta):
+    return (snippet.content == snippet_meta
+            or snippet.description == snippet_meta
+            or snippet.name == snippet_meta)
 
 
 def confirm(msg):
@@ -148,10 +169,6 @@ class SplitPromptSession(PromptSession):
             clipboard=DynamicClipboard(lambda: self.clipboard),
             key_bindings=merge_key_bindings([
                 merge_key_bindings([
-                    auto_suggest_bindings,
-                    ConditionalKeyBindings(open_in_editor_bindings,
-                        dyncond('enable_open_in_editor') &
-                        has_focus(DEFAULT_BUFFER)),
                     prompt_bindings
                 ]),
                 DynamicKeyBindings(lambda: self.key_bindings),
@@ -189,16 +206,71 @@ class CompletionsWidgetControl(UIControl):
         return UIContent(get_line, line_count=len(completions))
 
 
-class SnippetCompleter(Completer):
-    def __init__(self, descriptions):
+class SnippetCompleter(FuzzyCompleter):
+    CATEGORY_PREFIXES = ['c:', 'n:', 'd:']
+    def __init__(self, snippets):
         super(SnippetCompleter).__init__()
-        self._descriptions = descriptions
-        self._compl = WordCompleter(descriptions)
-        self._fzy_completer = FuzzyCompleter(self._compl)
+        self._snippets = snippets
+        self._search_strings = []
 
     def get_completions(self, doc, event):
-        # Hack for fuzzy completer to add selected_style
-        for completion in self._fzy_completer.get_completions(doc, event):
-            completion.style = 'fg:white bg:black'
-            completion.selected_style = 'fg:white bg:green'
+        prompt_content = doc.text_before_cursor
+        word, prefix = _strip_prefix(prompt_content)
+        stripped_word = word.strip()
+        if not stripped_word:
+            return []
+        self._search_strings = self._get_snippet_search_strings(prefix.strip())
+        offset = len(prefix)
+        doc2 = Document(text=doc.text[offset:doc.cursor_position - len(word)],
+                        cursor_position=doc.cursor_position - len(word) - offset)
+
+        return self._get_fuzzy_completions(self._get_completions(doc2, event),
+                                           stripped_word)
+
+    def _get_completions(self, doc, event):
+        word = doc.get_word_before_cursor()
+        for search_string in self._search_strings:
+            if search_string.startswith(word):
+                yield Completion(search_string,
+                                 start_position=-len(word),
+                                 style='fg:white bg:black',
+                                 selected_style='bg:green')
+
+    def _get_snippet_search_strings(self, prefix):
+        if prefix == 'c:':
+            words = [snippet.content for snippet in self._snippets]
+        elif prefix == 'n:':
+            words = [snippet.name for snippet in self._snippets]
+        elif prefix == 'd:':
+            words = [snippet.description for snippet in self._snippets]
+        else:
+            words = [snippet.content for snippet in self._snippets]
+        words = filter(lambda w: bool(w), words)
+        return words
+
+    def _get_fuzzy_completions(self, completions, word):
+        fuzzy_matches = []
+        pat = '.*?'.join(map(re.escape, word))
+        pat = '(?=({0}))'.format(pat)
+        regex = re.compile(pat, re.IGNORECASE)
+        for compl in completions:
+            matches = list(regex.finditer(compl.text))
+            if matches:
+                # Prefer the match, closest to the left, then shortest.
+                best = min(matches, key=lambda m: (m.start(), len(m.group(1))))
+                fuzzy_matches.append(_FuzzyMatch(len(best.group(1)), best.start(), compl))
+
+        def sort_key(fuzzy_match):
+            " Sort by start position, then by the length of the match. "
+            return fuzzy_match.start_pos, fuzzy_match.match_length
+
+        fuzzy_matches = sorted(fuzzy_matches, key=sort_key)
+
+        for match in fuzzy_matches:
+            # Include these completions, but set the correct `display`
+            # attribute and `start_position`.
+            completion = match.completion
+            completion.start_position = completion.start_position - len(word)
+            completion.display = self._get_display(match, word)
             yield completion
+

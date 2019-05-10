@@ -63,12 +63,10 @@ def _get_snippet(name=None):
 
 def _query_snippet():
     snippets = storage.get_all_snippets()
-    snippet_contents = [s.content for s in snippets]
-    snippet_content = prompt.select_snippet(snippet_contents)
-    for snippet in snippets:
-        if snippet.content == snippet_content:
-            return snippet
-    raise LookupError('Could not find snippet')
+    snippet = prompt.select_snippet(snippets)
+    if not snippet:
+        raise LookupError('Could not find snippet')
+    return snippet
 
 
 def _put_text_tty(text):
