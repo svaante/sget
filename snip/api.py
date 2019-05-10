@@ -7,6 +7,7 @@ import pyperclip
 
 
 from snip import storage
+from snip import share as _share
 from snip.prompt import prompt
 
 
@@ -45,6 +46,14 @@ def get(name=None):
     except (FileNotFoundError, LookupError):
         raise LookupError('Snippet not found')
     _put_text_tty(snippet.content)
+
+
+def share(name=None):
+    try:
+        snippet = _get_snippet(name)
+    except (FileNotFoundError, LookupError):
+        raise LookupError('Snippet not found')
+    return _share.share(snippet)
 
 
 def clear(name=None):

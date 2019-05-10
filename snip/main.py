@@ -51,6 +51,16 @@ def get(name):
 
 
 @cli.command()
+@click.argument('name', default=None, required=False)
+def share(name):
+    try:
+        res = api.share(name)
+        click.echo(res)
+    except LookupError as e:
+        click.echo(str(e))
+
+
+@cli.command()
 def clear():
     api.clear()
 
