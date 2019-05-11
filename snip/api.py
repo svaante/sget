@@ -1,7 +1,3 @@
-import sys
-import termios
-import fcntl
-
 import click
 import pyperclip
 
@@ -38,7 +34,7 @@ def fadd(snippet_file, description, name):
         return str(e)
 
 
-def cp(name=None):
+def get(name=None):
     try:
         snippet = _get_snippet(name)
     except (FileNotFoundError, LookupError):

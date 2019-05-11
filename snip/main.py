@@ -8,7 +8,7 @@ from snip import api
 @click.pass_context
 def cli(ctx):
     if ctx.invoked_subcommand is None:
-        cp()
+        get()
 
 
 @cli.command()
@@ -38,17 +38,19 @@ def rm(name):
         name = ' '.join(name)
     try:
         api.rm(name)
+        click.echo('Snippet removed!')
     except LookupError as e:
         click.echo(str(e))
 
 
 @cli.command()
 @click.argument('name', default=None, required=False, nargs=-1)
-def cp(name):
+def get(name):
     if name:
         name = ' '.join(name)
     try:
-        api.cp(name)
+        api.get(name)
+        click.echo('Snippet copied to clipboard!')
     except LookupError as e:
         click.echo(str(e))
 
