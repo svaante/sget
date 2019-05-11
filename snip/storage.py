@@ -13,11 +13,12 @@ def get_all_snippets():
     return snippets
 
 
-def add_snippet(content, description, name=None):
-    if not name:
-        name = _get_next_snippet_name()
+def add_snippet(content, description, name):
     snippet = Snippet(content.strip(), description.strip(), name.strip())
     snippet_path = os.path.join(cfg.snippet_dir, name + '.snip')
+    if os.path.exists(snippet_path):
+        msg = 'Snippet {} already exists'.format(name)
+        raise IOError(msg)
     with open(snippet_path, 'w+') as f:
         f.write(snippet.to_yaml())
 

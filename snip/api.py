@@ -21,7 +21,21 @@ def list():
 
 
 def add(content, description, name):
-    storage.add_snippet(content, description, name)
+    try:
+        storage.add_snippet(content, description, name)
+        return 'Successfully added snippet'
+    except IOError as e:
+        return str(e)
+
+
+def fadd(snippet_file, description, name):
+    try:
+        storage.add_snippet(''.join(snippet_file.readlines()),
+                            description,
+                            name)
+        return 'Successfully added snippet'
+    except IOError as e:
+        return str(e)
 
 
 def cp(name=None):

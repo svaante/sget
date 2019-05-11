@@ -28,13 +28,7 @@ def add(content, description, name):
 @click.option('--description', prompt=True)
 @click.option('--name', prompt=True)
 def fadd(snippet_file, description, name):
-    content = [line.strip('\n') + ' \\ \n' for line in snippet_file.readlines()]
-    content[-1] = content[-1][0:-3]
-    content = ''.join(content)
-    if name == '':
-        api.add(content, description)
-    else:
-        api.add(content, description, name)
+    click.echo(api.fadd(snippet_file, description, name))
 
 
 @cli.command()
