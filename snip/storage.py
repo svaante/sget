@@ -16,7 +16,7 @@ def get_all_snippets():
 def add_snippet(content, description, name=None):
     if not name:
         name = _get_next_snippet_name()
-    snippet = Snippet(content, description, name)
+    snippet = Snippet(content.strip(), description.strip(), name.strip())
     snippet_path = os.path.join(cfg.snippet_dir, name + '.snip')
     with open(snippet_path, 'w+') as f:
         f.write(snippet.to_yaml())

@@ -24,8 +24,10 @@ def add(content, description, name):
 
 
 @cli.command()
-@click.argument('name', default=None, required=False)
+@click.argument('name', default=None, required=False, nargs=-1)
 def rm(name):
+    if name:
+        name = ' '.join(name)
     try:
         api.rm(name)
     except LookupError as e:
@@ -33,8 +35,10 @@ def rm(name):
 
 
 @cli.command()
-@click.argument('name', default=None, required=False)
+@click.argument('name', default=None, required=False, nargs=-1)
 def cp(name):
+    if name:
+        name = ' '.join(name)
     try:
         api.cp(name)
     except LookupError as e:
@@ -42,8 +46,10 @@ def cp(name):
 
 
 @cli.command()
-@click.argument('name', default=None, required=False)
+@click.argument('name', default=None, required=False, nargs=-1)
 def get(name):
+    if name:
+        name = ' '.join(name)
     try:
         api.get(name)
     except LookupError as e:
@@ -53,6 +59,8 @@ def get(name):
 @cli.command()
 @click.argument('name', default=None, required=False)
 def share(name):
+    if name:
+        name = ' '.join(name)
     try:
         res = api.share(name)
         click.echo(res)
