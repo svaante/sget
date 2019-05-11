@@ -23,10 +23,6 @@ class Snippet():
     def groups(self):
         return self._groups
 
-    def to_yaml(self):
-        return yaml.dump({'description': self._description,
-                          'content': self._content})
-
     @staticmethod
     def from_dict(data, name):
         content = data['content']
@@ -39,9 +35,9 @@ class Snippet():
 
     @staticmethod
     def to_dict(snippet):
-        return {snippet.name: {'content': snippet.content,
-                               'description': snippet.description,
-                               'groups': snippet.groups}}
+        return {'content': snippet.content,
+                'description': snippet.description,
+                'groups': snippet.groups}
 
     def __repr__(self):
         msg = 'Snippet:\ncontent - {}\ndescription - {}'

@@ -16,7 +16,7 @@ def cli(ctx):
 @click.option('--description', prompt=True)
 @click.option('--name', prompt=True)
 @click.option('--groups', prompt=True, default='')
-def add(content, description, name):
+def add(content, description, name, groups):
     content = ' '.join(content).strip()
     description = description.strip()
     name = name.strip()
@@ -29,7 +29,7 @@ def add(content, description, name):
 @click.argument('snippet_file', type=click.File('r'), nargs=1)
 @click.option('--description', prompt=True)
 @click.option('--name', prompt=True)
-@click.option('--groups', prompt=True, default='None')
+@click.option('--groups', prompt=True, default='')
 def fadd(snippet_file, description, name, groups):
     description = description.strip()
     name = name.strip()
@@ -45,9 +45,10 @@ def rm(name):
         name = ' '.join(name)
     try:
         api.rm(name)
-        click.echo('Snippet removed!')
-    except LookupError as e:
-        click.echo(str(e))
+        msg = 'Snippet successfully removed!'
+        _success(msg)
+    except Exception as e:
+        _error(str(e))
 
 
 @cli.command()
@@ -57,37 +58,39 @@ def get(name):
         name = ' '.join(name)
     try:
         api.get(name)
-        click.echo('Snippet copied to clipboard!')
-    except LookupError as e:
-        click.echo(str(e))
-
-
-@cli.command()
-@click.argument('name', default=None, required=False)
-def share(name):
-    if name:
-        name = ' '.join(name)
-    try:
-        res = api.share(name)
-        click.echo(res)
-    except LookupError as e:
-        click.echo(str(e))
+        msg = 'Snippet copied to clipboard!'
+        _success(msg)
+    except Exception as e:
+        _error(str(e))
 
 
 @cli.command()
 @click.argument('snippets_file', type=click.File('r'), nargs=1)
 def install(snippets_file):
-    click.echo(api.install(snippets_file))
+    errors = api.install(snippets_file)
+    if errors:
+        _error('\n'.join(errors))
+    else:
+        _success('Successfully installed all snippets!')
 
 
 @cli.command()
 def clear():
     api.clear()
+    _success('Cleared all snippets!')
 
 
 @cli.command()
 def list():
     api.list()
+
+
+def _success(msg):
+    click.echo(click.style(msg, fg='green'))
+
+
+def _error(msg):
+    click.echo(click.style(msg, fg='red'))
 
 
 if __name__ == '__main__':

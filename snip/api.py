@@ -21,50 +21,33 @@ def list():
 
 
 def add(content, description, name, groups):
-    try:
-        storage.add_snippet(content, description, name, groups)
-        return 'Successfully added snippet'
-    except IOError as e:
-        return str(e)
+    storage.add_snippet(content, description, name, groups)
 
 
 def fadd(snippet_file, description, name, groups):
-    try:
-        storage.add_snippet(''.join(snippet_file.readlines()),
-                            description,
-                            name,
-                            groups)
-        return 'Successfully added snippet'
-    except IOError as e:
-        return str(e)
+    storage.add_snippet(''.join(snippet_file.readlines()),
+                        description,
+                        name,
+                        groups)
 
 
 def install(snippets_file):
     errors = storage.install_from_file(snippets_file)
-    return '\n'.join(errors)
+    return errors
 
 
 def get(name=None):
-    try:
-        snippet = _get_snippet(name)
-    except (FileNotFoundError, LookupError):
-        raise LookupError('Snippet not found.')
+    snippet = _get_snippet(name)
     _snippet_to_clipboard(snippet)
 
 
 def rm(name=None):
-    try:
-        snippet = _get_snippet(name)
-    except (FileNotFoundError, LookupError):
-        raise LookupError('Snippet not found')
+    snippet = _get_snippet(name)
     storage.rm_snippet(snippet)
 
 
 def share(name=None):
-    try:
-        snippet = _get_snippet(name)
-    except (FileNotFoundError, LookupError):
-        raise LookupError('Snippet not found')
+    snippet = _get_snippet(name)
     return _share.share(snippet)
 
 
@@ -86,7 +69,7 @@ def _query_snippet():
     snippets = storage.get_all_snippets()
     snippet = prompt.select_snippet(snippets)
     if not snippet:
-        raise LookupError('Could not find snippet')
+        raise LookupError('No matching snippet found!')
     return snippet
 
 
