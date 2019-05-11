@@ -1,0 +1,14 @@
+[sh_for_loop]
+content = "for file in *.txt; do ls $file; done"
+groups = ["bash"]
+description = "A simple for loop in bash."
+
+[sh_for_range]
+content = "for num in {0..9}; do echo $num; done"
+groups = ["bash"]
+description = "For n in range bash."
+
+[sh_append_path]
+content = "PATH=$PATH:/<new_path>"
+groups = ["env"]
+description = "Append to shells path."

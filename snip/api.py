@@ -39,6 +39,11 @@ def fadd(snippet_file, description, name, groups):
         return str(e)
 
 
+def install(snippets_file):
+    errors = storage.install_from_file(snippets_file)
+    return '\n'.join(errors)
+
+
 def get(name=None):
     try:
         snippet = _get_snippet(name)

@@ -75,6 +75,12 @@ def share(name):
 
 
 @cli.command()
+@click.argument('snippets_file', type=click.File('r'), nargs=1)
+def install(snippets_file):
+    click.echo(api.install(snippets_file))
+
+
+@cli.command()
 def clear():
     api.clear()
 
