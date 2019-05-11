@@ -1,12 +1,11 @@
-import yaml
-import os
-
-
 class Snippet():
-    def __init__(self, content, description, name):
+    def __init__(self, content, description, name, groups=None):
         self._content = content
         self._description = description
         self._name = name
+        if not groups:
+            groups = []
+        self._groups = groups
 
     @property
     def content(self):

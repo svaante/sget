@@ -11,26 +11,29 @@ def list():
     for snippet in storage.get_all_snippets():
         name = 'Name - {}'.format(snippet.name)
         desc = 'Description - {}'.format(snippet.description)
+        groups = 'Groups - {}'.format(snippet.groups)
         content = snippet.content
         click.echo(click.style(name, fg='green'))
         click.echo(click.style(desc, fg='green'))
+        click.echo(click.style(groups, fg='green'))
         click.echo(click.style(content, fg='red'))
         click.echo('_' * 50)
 
 
-def add(content, description, name):
+def add(content, description, name, groups):
     try:
-        storage.add_snippet(content, description, name)
+        storage.add_snippet(content, description, name, groups)
         return 'Successfully added snippet'
     except IOError as e:
         return str(e)
 
 
-def fadd(snippet_file, description, name):
+def fadd(snippet_file, description, name, groups):
     try:
         storage.add_snippet(''.join(snippet_file.readlines()),
                             description,
-                            name)
+                            name,
+                            groups)
         return 'Successfully added snippet'
     except IOError as e:
         return str(e)

@@ -15,21 +15,27 @@ def cli(ctx):
 @click.argument('content', type=str, nargs=-1)
 @click.option('--description', prompt=True)
 @click.option('--name', prompt=True)
+@click.option('--groups', prompt=True, default='')
 def add(content, description, name):
     content = ' '.join(content).strip()
     description = description.strip()
     name = name.strip()
-    click.echo(api.add(content, description, name))
+    if groups:
+        groups = groups.strip().split(',')
+    click.echo(api.add(content, description, name, groups))
 
 
 @cli.command()
 @click.argument('snippet_file', type=click.File('r'), nargs=1)
 @click.option('--description', prompt=True)
 @click.option('--name', prompt=True)
-def fadd(snippet_file, description, name):
+@click.option('--groups', prompt=True, default='None')
+def fadd(snippet_file, description, name, groups):
     description = description.strip()
     name = name.strip()
-    click.echo(api.fadd(snippet_file, description, name))
+    if groups:
+        groups = groups.strip().split(',')
+    click.echo(api.fadd(snippet_file, description, name, groups))
 
 
 @cli.command()

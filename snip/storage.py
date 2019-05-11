@@ -24,10 +24,15 @@ def _get_snippet_dicts():
     return data
 
 
-def add_snippet(content, description, name):
-    snippet = Snippet(content, description, name)
-    with open(cfg.snippet_file, 'w+') as f:
-        f.write(toml.dumps(snippet.to_dict()))
+def add_snippet(content, description, name, groups):
+    snippet_dicts = _get_snippet_dicts()
+    if snippet_dicts.get(name) is not None:
+        msg = 'Snippet with name {} already exists.'
+        raise IOError(msg.format(name))
+
+    snippet = Snippet(content, description, name, groups)
+    with open(cfg.snippet_file, 'a') as f:
+        f.write(toml.dumps(Snippet.to_dict(snippet)))
 
 
 def get_snippet(name):
@@ -41,29 +46,5 @@ def rm_snippet(snippet):
 
 
 def clear_snippets():
-    for snippet in get_all_snippets():
-        rm_snippet(snippet)
-
-
-def _get_all_snippets_from_dir(dirr):
-    if not os.path.isdir(dirr):
-        raise IOError('No such directory {}'.format(dirr))
-    snippet_paths = []
-    for root, dirs, files in os.walk(dirr):
-        snippet_paths = (os.path.join(root, f)
-                         for f in files if f.endswith('.snip'))
-    return snippet_paths
-
-
-def _get_next_snippet_name():
-    latest_id = -1
-    snippet_files = _get_all_snippets_from_dir(cfg.snippet_dir)
-    for snippet_path in snippet_files:
-        try:
-            snippet_name = os.path.basename(snippet_path)
-            id = int(os.path.splitext(snippet_name)[0])
-        except ValueError:
-            continue
-        if id > latest_id:
-            latest_id = id
-    return str(latest_id + 1)
+    with open(cfg.snippet_file, 'w') as f:
+        f.write('')
