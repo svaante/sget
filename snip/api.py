@@ -40,14 +40,6 @@ def rm(name=None):
     storage.rm_snippet(snippet)
 
 
-def get(name=None):
-    try:
-        snippet = _get_snippet(name)
-    except (FileNotFoundError, LookupError):
-        raise LookupError('Snippet not found')
-    _put_text_tty(snippet.content)
-
-
 def share(name=None):
     try:
         snippet = _get_snippet(name)
@@ -77,19 +69,6 @@ def _query_snippet():
         raise LookupError('Could not find snippet')
     return snippet
 
-
-def _put_text_tty(text):
-    tty = sys.stdin
-    old_attr = termios.tcgetattr(tty)
-    new_attr = termios.tcgetattr(tty)
-    # No echo please
-    new_attr[3] &= ~termios.ECHO
-    termios.tcsetattr(tty, termios.TCSANOW, new_attr)
-
-    for char in text:
-        fcntl.ioctl(tty, termios.TIOCSTI, char)
-
-    termios.tcsetattr(tty, termios.TCSANOW, old_attr)
 
 def _snippet_to_clipboard(snippet):
     pyperclip.copy(snippet.content)

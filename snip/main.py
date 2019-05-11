@@ -8,7 +8,7 @@ from snip import api
 @click.pass_context
 def cli(ctx):
     if ctx.invoked_subcommand is None:
-        get()
+        cp()
 
 
 @cli.command()
@@ -41,17 +41,6 @@ def cp(name):
         name = ' '.join(name)
     try:
         api.cp(name)
-    except LookupError as e:
-        click.echo(str(e))
-
-
-@cli.command()
-@click.argument('name', default=None, required=False, nargs=-1)
-def get(name):
-    if name:
-        name = ' '.join(name)
-    try:
-        api.get(name)
     except LookupError as e:
         click.echo(str(e))
 
