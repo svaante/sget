@@ -13,9 +13,9 @@ def cli(ctx):
 
 @cli.command()
 @click.argument('content', type=str, nargs=-1)
-@click.option('--description', prompt=True)
-@click.option('--name', prompt=True)
-@click.option('--groups', prompt=True, default='')
+@click.option('-d', '--description', prompt=True)
+@click.option('-n', '--name', prompt=True)
+@click.option('-g', '--groups', prompt=True, default='')
 def add(content, description, name, groups):
     content = ' '.join(content).strip()
     description = description.strip()
@@ -27,9 +27,9 @@ def add(content, description, name, groups):
 
 @cli.command()
 @click.argument('snippet_file', type=click.File('r'), nargs=1)
-@click.option('--description', prompt=True)
-@click.option('--name', prompt=True)
-@click.option('--groups', prompt=True, default='')
+@click.option('-d', '--description', prompt=True)
+@click.option('-n', '--name', prompt=True)
+@click.option('-g', '--groups', prompt=True, default='')
 def fadd(snippet_file, description, name, groups):
     description = description.strip()
     name = name.strip()
@@ -81,8 +81,9 @@ def clear():
 
 
 @cli.command()
-def list():
-    api.list()
+@click.option('-g', '--group', default=None)
+def list(group):
+    api.list(group=group)
 
 
 def _success(msg):

@@ -7,8 +7,12 @@ from snip import share as _share
 from snip.prompt import prompt
 
 
-def list():
-    for snippet in storage.get_all_snippets():
+def list(group=None):
+    snippets = storage.get_all_snippets()
+    if group:
+        snippets = _filters_snippets_by_group(snippets, group)
+
+    for snippet in snippets:
         name = 'Name - {}'.format(snippet.name)
         desc = 'Description - {}'.format(snippet.description)
         groups = 'Groups - {}'.format(snippet.groups)
@@ -55,6 +59,11 @@ def clear(name=None):
     msg = 'You are about to clear all your saved snippets, are you sure?'
     if prompt.confirm(msg):
         storage.clear_snippets()
+
+
+def _filters_snippets_by_group(snippets, group):
+    filtered = [s for s in snippets if group in s.groups]
+    return filtered
 
 
 def _get_snippet(name=None):
