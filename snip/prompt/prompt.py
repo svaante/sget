@@ -64,7 +64,7 @@ def select_snippet(snippets):
 
 def _strip_prefix(word):
     prefix = word[0:2]
-    if len(prefix) < 2 or prefix not in SnippetCompleter.CATEGORY_PREFIXES:
+    if len(prefix) < 2 or prefix not in CATEGORY_MATCHERS.keys():
         return word, ''
     else:
         return word[2:], prefix
@@ -197,19 +197,48 @@ class CompletionsWidgetControl(UIControl):
         return UIContent(get_line, line_count=len(completions))
 
 
+def _content_match(snippet, word):
+    if snippet.content.startswith(word):
+        return snippet.content
+    return None
+
+
+def _name_match(snippet, word):
+    if snippet.name.startswith(word):
+        return snippet.name
+    return None
+
+
+def _description_match(snippet, word):
+    if snippet.description.startswith(word):
+        return snippet.description
+    return None
+
+
+# Unused for now, probably have to redo stuff
+def _group_match(snippet, word):
+    for group in snippet.groups:
+        if group.startswith(word):
+            return {'match': group, 'display': snippet.description}
+    return None
+
+
+CATEGORY_MATCHERS = {'c:': _content_match,
+                     'n:': _name_match,
+                     'd:': _description_match}
+
+
 class SnippetCompleter(FuzzyCompleter):
-    CATEGORY_PREFIXES = ['c:', 'n:', 'd:']
 
     def __init__(self, snippets):
         super(SnippetCompleter).__init__()
         self._snippets = snippets
-        self._search_strings = []
 
     def get_completions(self, doc, event):
         prompt_content = doc.text_before_cursor
         word, prefix = _strip_prefix(prompt_content)
         stripped_word = word.strip()
-        self._search_strings = self._get_snippet_search_strings(prefix.strip())
+        self._match = CATEGORY_MATCHERS.get(prefix, _content_match)
         offset = len(prefix)
         doc_text = doc.text[offset:doc.cursor_position - len(word)]
         cursor_pos = doc.cursor_position - len(word) - offset
@@ -222,24 +251,14 @@ class SnippetCompleter(FuzzyCompleter):
 
     def _get_completions(self, doc, event):
         word = doc.get_word_before_cursor()
-        for search_string in self._search_strings:
-            if search_string.startswith(word):
-                yield Completion(search_string,
-                                 start_position=-len(word),
-                                 style='fg:white bg:black',
-                                 selected_style='bg:green')
-
-    def _get_snippet_search_strings(self, prefix):
-        if prefix == 'c:':
-            words = [snippet.content for snippet in self._snippets]
-        elif prefix == 'n:':
-            words = [snippet.name for snippet in self._snippets]
-        elif prefix == 'd:':
-            words = [snippet.description for snippet in self._snippets]
-        else:
-            words = [snippet.content for snippet in self._snippets]
-        words = filter(lambda w: bool(w), words)
-        return words
+        for snippet in self._snippets:
+            match = self._match(snippet, word)
+            if match is None:
+                continue
+            yield Completion(match,
+                             start_position=-len(word),
+                             style='fg:white bg:black',
+                             selected_style='bg:green')
 
     def _get_fuzzy_completions(self, completions, word):
         fuzzy_matches = []
@@ -273,4 +292,3 @@ class SnippetCompleter(FuzzyCompleter):
                                     style=style,
                                     selected_style=selected_style)
             yield completion
-
