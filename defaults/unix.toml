@@ -1,4 +1,14 @@
 [unix_find_file]
-content = "find . -name *.txt"
+content = "find . -name '*.txt'"
 description = "Find files from current directory."
 groups = [ "unix",]
+
+[unix_find_and_grep]
+content = "find . -name '*.md' -print | xargs grep 'snippet'"
+description = "Find files and pipe to grep."
+groups = [ "unix",]
+
+[unix_find_and_delete]
+content = "find . -type d -name '.txt' | xargs rm -rf"
+description = "Find and delete files."
+groups = ["unix",]

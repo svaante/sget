@@ -1,0 +1,9 @@
+[docker_stop_and_remove_containers]
+content = "docker container stop $(docker container ls -aq) && \\ \ndocker container rm $(docker container ls -aq)"
+description = "Stops and removes all docker containers."
+groups = ["docker",]
+
+[docker_remove_none_images]
+content = "docker rmi $(docker images | grep \"^<none>\" | awk \"{print $3}\")"
+description = "Removes all docker images tagged with 'none'."
+groups = ["docker",]
