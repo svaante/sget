@@ -106,7 +106,6 @@ class SplitPromptSession(PromptSession):
             HighlightSelectionProcessor(),
             ConditionalProcessor(AppendAutoSuggestion(),
                                  has_focus(default_buffer) & ~is_done),
-            ConditionalProcessor(PasswordProcessor(), dyncond('is_password')),
             DisplayMultipleCursors(),
 
             # Users can insert processors here.
@@ -125,11 +124,11 @@ class SplitPromptSession(PromptSession):
                                dont_extend_height=True)
         default_buffer_window = Window(
             default_buffer_control,
-            #height=3,
             dont_extend_height=True,
             get_line_prefix=partial(
                 self._get_line_prefix, get_prompt_text_2=get_prompt_text_2),
             wrap_lines=dyncond('wrap_lines'))
+        divider = Window(char='.', height=1, style='bg:black')
         completion_window = Window(content=CompletionsWidgetControl(),
                 style='')
 
@@ -137,6 +136,7 @@ class SplitPromptSession(PromptSession):
         layout = HSplit([
             prompt_window,
             default_buffer_window,
+            divider,
             completion_window
         ])
 
@@ -149,8 +149,6 @@ class SplitPromptSession(PromptSession):
         dyncond = self._dyncond
 
         # Default key bindings.
-        auto_suggest_bindings = load_auto_suggest_bindings()
-        open_in_editor_bindings = load_open_in_editor_bindings()
         prompt_bindings = self._create_prompt_bindings()
 
         # Create application
@@ -158,13 +156,6 @@ class SplitPromptSession(PromptSession):
             layout=self.layout,
             full_screen=True,
             style=DynamicStyle(lambda: self.style),
-            style_transformation=merge_style_transformations([
-                DynamicStyleTransformation(lambda: self.style_transformation),
-                ConditionalStyleTransformation(
-                    SwapLightAndDarkStyleTransformation(),
-                    dyncond('swap_light_and_dark_colors'),
-                ),
-            ]),
             include_default_pygments_style=dyncond('include_default_pygments_style'),
             clipboard=DynamicClipboard(lambda: self.clipboard),
             key_bindings=merge_key_bindings([
@@ -178,8 +169,6 @@ class SplitPromptSession(PromptSession):
             erase_when_done=erase_when_done,
             reverse_vi_search_direction=True,
             color_depth=lambda: self.color_depth,
-
-            # I/O.
             input=self.input,
             output=self.output)
 
@@ -202,12 +191,15 @@ class CompletionsWidgetControl(UIControl):
         def get_line(idx):
             completion = completions[idx]
             is_curr_completion = (idx == completion_index)
-            return _get_menu_item_fragments(completion, is_curr_completion, width)
+            return _get_menu_item_fragments(completion,
+                                            is_curr_completion,
+                                            width)
         return UIContent(get_line, line_count=len(completions))
 
 
 class SnippetCompleter(FuzzyCompleter):
     CATEGORY_PREFIXES = ['c:', 'n:', 'd:']
+
     def __init__(self, snippets):
         super(SnippetCompleter).__init__()
         self._snippets = snippets
@@ -217,15 +209,16 @@ class SnippetCompleter(FuzzyCompleter):
         prompt_content = doc.text_before_cursor
         word, prefix = _strip_prefix(prompt_content)
         stripped_word = word.strip()
-        if not stripped_word:
-            return []
         self._search_strings = self._get_snippet_search_strings(prefix.strip())
         offset = len(prefix)
-        doc2 = Document(text=doc.text[offset:doc.cursor_position - len(word)],
-                        cursor_position=doc.cursor_position - len(word) - offset)
+        doc_text = doc.text[offset:doc.cursor_position - len(word)]
+        cursor_pos = doc.cursor_position - len(word) - offset
+        doc2 = Document(text=doc_text, cursor_position=cursor_pos)
 
-        return self._get_fuzzy_completions(self._get_completions(doc2, event),
-                                           stripped_word)
+        completions = self._get_fuzzy_completions(self._get_completions(doc2,
+                                                                        event),
+                                                  stripped_word)
+        return completions
 
     def _get_completions(self, doc, event):
         word = doc.get_word_before_cursor()
@@ -258,7 +251,9 @@ class SnippetCompleter(FuzzyCompleter):
             if matches:
                 # Prefer the match, closest to the left, then shortest.
                 best = min(matches, key=lambda m: (m.start(), len(m.group(1))))
-                fuzzy_matches.append(_FuzzyMatch(len(best.group(1)), best.start(), compl))
+                fuzzy_matches.append(_FuzzyMatch(len(best.group(1)),
+                                                 best.start(),
+                                                 compl))
 
         def sort_key(fuzzy_match):
             " Sort by start position, then by the length of the match. "
@@ -267,10 +262,15 @@ class SnippetCompleter(FuzzyCompleter):
         fuzzy_matches = sorted(fuzzy_matches, key=sort_key)
 
         for match in fuzzy_matches:
-            # Include these completions, but set the correct `display`
-            # attribute and `start_position`.
-            completion = match.completion
-            completion.start_position = completion.start_position - len(word)
-            completion.display = self._get_display(match, word)
+            old_comp = match.completion
+            start_pos = old_comp.start_position - len(word)
+            display = self._get_display(match, word)
+            style = old_comp.style
+            selected_style = old_comp.selected_style
+            completion = Completion(old_comp.text,
+                                    display=display,
+                                    start_position=start_pos,
+                                    style=style,
+                                    selected_style=selected_style)
             yield completion
 
