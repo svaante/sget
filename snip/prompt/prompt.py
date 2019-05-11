@@ -215,17 +215,21 @@ def _description_match(snippet, word):
     return None
 
 
-# Unused for now, probably have to redo stuff
 def _group_match(snippet, word):
     for group in snippet.groups:
         if group.startswith(word):
-            return {'match': group, 'display': snippet.description}
+            words = word.split(' ')
+            rest_after_group = ''
+            if len(words) > 1:
+                rest_after_group = ' '.join(words[1:])
+            return _content_match(snippet, rest_after_group)
     return None
 
 
 CATEGORY_MATCHERS = {'c:': _content_match,
                      'n:': _name_match,
-                     'd:': _description_match}
+                     'd:': _description_match,
+                     'g:': _group_match}
 
 
 class SnippetCompleter(FuzzyCompleter):
@@ -237,7 +241,7 @@ class SnippetCompleter(FuzzyCompleter):
     def get_completions(self, doc, event):
         prompt_content = doc.text_before_cursor
         word, prefix = _strip_prefix(prompt_content)
-        stripped_word = word.strip()
+        word = word.split(' ')[-1]
         self._match = CATEGORY_MATCHERS.get(prefix, _content_match)
         offset = len(prefix)
         doc_text = doc.text[offset:doc.cursor_position - len(word)]
@@ -246,11 +250,11 @@ class SnippetCompleter(FuzzyCompleter):
 
         completions = self._get_fuzzy_completions(self._get_completions(doc2,
                                                                         event),
-                                                  stripped_word)
+                                                  word)
         return completions
 
     def _get_completions(self, doc, event):
-        word = doc.get_word_before_cursor()
+        word = doc.get_word_before_cursor().strip()
         for snippet in self._snippets:
             match = self._match(snippet, word)
             if match is None:
