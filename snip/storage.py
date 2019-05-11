@@ -1,32 +1,38 @@
 import os
 
+
+import toml
+
+
 from snip.config import config as cfg
 from snip.snippet import Snippet
 
 
 def get_all_snippets():
     try:
-        files = _get_all_snippets_from_dir(cfg.snippet_dir)
-        snippets = [Snippet.from_file(f) for f in files]
+        snippet_dicts = _get_snippet_dicts()
+        snippets = [Snippet.from_dict(d, name)
+                    for (name, d) in snippet_dicts.items()]
     except IOError:
         snippets = []
     return snippets
 
 
+def _get_snippet_dicts():
+    with open(cfg.snippet_file, 'r') as f:
+        data = toml.loads(f.read())
+    return data
+
+
 def add_snippet(content, description, name):
-    snippet = Snippet(content.strip(), description.strip(), name.strip())
-    snippet_path = os.path.join(cfg.snippet_dir, name + '.snip')
-    if os.path.exists(snippet_path):
-        msg = 'Snippet {} already exists'.format(name)
-        raise IOError(msg)
-    with open(snippet_path, 'w+') as f:
-        f.write(snippet.to_yaml())
+    snippet = Snippet(content, description, name)
+    with open(cfg.snippet_file, 'w+') as f:
+        f.write(toml.dumps(snippet.to_dict()))
 
 
 def get_snippet(name):
-    snippet_path = os.path.join(cfg.snippet_dir, name + '.snip')
-    snippet = Snippet.from_file(snippet_path)
-    return snippet
+    snippets = _get_snippet_dicts()
+    return Snippet.from_dict(snippets[name], name)
 
 
 def rm_snippet(snippet):

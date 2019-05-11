@@ -20,19 +20,29 @@ class Snippet():
     def name(self):
         return self._name
 
+    @property
+    def groups(self):
+        return self._groups
+
     def to_yaml(self):
         return yaml.dump({'description': self._description,
                           'content': self._content})
 
     @staticmethod
-    def from_file(f):
-        f_name = os.path.basename(f)
-        name = os.path.splitext(f_name)[0]
-        with open(f, 'r') as snip_f:
-            data = yaml.safe_load(snip_f.read())
-        return Snippet(content=data['content'],
-                       description=data['description'],
-                       name=name)
+    def from_dict(data, name):
+        content = data['content']
+        description = data['description']
+        groups = data.get('groups')
+        return Snippet(content=content,
+                       description=description,
+                       name=name,
+                       groups=groups)
+
+    @staticmethod
+    def to_dict(snippet):
+        return {snippet.name: {'content': snippet.content,
+                               'description': snippet.description,
+                               'groups': snippet.groups}}
 
     def __repr__(self):
         msg = 'Snippet:\ncontent - {}\ndescription - {}'

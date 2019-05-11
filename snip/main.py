@@ -16,11 +16,10 @@ def cli(ctx):
 @click.option('--description', prompt=True)
 @click.option('--name', prompt=True)
 def add(content, description, name):
-    content = ' '.join(content)
-    if name == '':
-        api.add(content, description)
-    else:
-        api.add(content, description, name)
+    content = ' '.join(content).strip()
+    description = description.strip()
+    name = name.strip()
+    click.echo(api.add(content, description, name))
 
 
 @cli.command()
@@ -28,6 +27,8 @@ def add(content, description, name):
 @click.option('--description', prompt=True)
 @click.option('--name', prompt=True)
 def fadd(snippet_file, description, name):
+    description = description.strip()
+    name = name.strip()
     click.echo(api.fadd(snippet_file, description, name))
 
 
