@@ -9,10 +9,12 @@ from snip.prompt import prompt
 
 def list():
     for snippet in storage.get_all_snippets():
-        msg = 'Description - {}'.format(snippet.description)
-        click.echo(click.style(msg, fg='green'))
-        msg = '    Snippet - {}'.format(snippet.content)
-        click.echo(click.style(msg, fg='red'))
+        name = 'Name - {}'.format(snippet.name)
+        desc = 'Description - {}'.format(snippet.description)
+        content = snippet.content
+        click.echo(click.style(name, fg='green'))
+        click.echo(click.style(desc, fg='green'))
+        click.echo(click.style(content, fg='red'))
         click.echo('_' * 50)
 
 
