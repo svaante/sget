@@ -192,7 +192,7 @@ class SplitPromptSession(PromptSession):
         handle = key_bindings.add
         default_focused = has_focus(DEFAULT_BUFFER)
 
-        @handle('c-n', filter=default_focused)
+        @handle('c-m', filter=default_focused)
         def _(event):
             complete_state = event.current_buffer.complete_state
             self.completer.toggle_search_mode()
@@ -284,16 +284,15 @@ class SnippetCompleter(FuzzyCompleter):
     def get_completions(self, doc, event):
         prompt_content = doc.text_before_cursor
         text, groups = self._parse_group_filters(prompt_content)
-        word = text.split(' ')[0]
         offset = len(prompt_content) - len(text)
-        doc_text = doc.text[offset:doc.cursor_position - len(word)]
-        cursor_pos = doc.cursor_position - len(word) - offset
+        doc_text = doc.text[offset:doc.cursor_position - len(text)]
+        cursor_pos = doc.cursor_position - len(text) - offset
         doc2 = Document(text=doc_text, cursor_position=cursor_pos)
 
         completions = self._get_fuzzy_completions(self._get_completions(doc2,
                                                                         event,
                                                                         groups),
-                                                  word)
+                                                  text)
         return completions
 
     def _parse_group_filters(self, text):
