@@ -12,7 +12,7 @@ pip install -e .
 ## USAGE
 ```bash
 # Add a snippet
-sget add "grep -r "sget" *" --name grep_sget --description "simple grep" --groups unix
+sget add "grep -r "sget"
 
 # Add many snippets from a .toml file
 curl https://raw.githubusercontent.com/ONordander/snippets/master/unix.toml -o unix.toml
