@@ -1,0 +1,122 @@
+from prompt_toolkit.completion import FuzzyCompleter, Completion
+from prompt_toolkit.completion.fuzzy_completer import _FuzzyMatch
+from prompt_toolkit.buffer import Document
+
+import re
+
+
+def _content_match(snippet, word):
+    if snippet.content.startswith(word):
+        return snippet.content
+    return None
+
+
+def _name_match(snippet, word):
+    if snippet.name.startswith(word):
+        return snippet.name
+    return None
+
+
+def _description_match(snippet, word):
+    if snippet.description.startswith(word):
+        return snippet.description
+    return None
+
+
+def _filter_by_group(snippets, filter_groups):
+    for snippet in snippets:
+        for group in snippet.groups:
+            if group in filter_groups:
+                yield snippet
+                break
+
+
+class SnippetSearcher(FuzzyCompleter):
+    SEARCH_MODES = (_content_match, _name_match, _description_match)
+    SEARCH_MODE_NAMES = ('CONTENT', 'NAME', 'DESCRIPTION')
+
+    def __init__(self, snippets):
+        super(SnippetSearcher).__init__()
+        self._snippets = snippets
+        self._search_mode_idx = -1
+        self.toggle_search_mode()
+
+    def toggle_search_mode(self):
+        next_idx = (self._search_mode_idx + 1) % len(SnippetSearcher.SEARCH_MODES)
+        self._search_mode_idx = next_idx
+        self._match = SnippetSearcher.SEARCH_MODES[next_idx]
+
+    def get_search_mode_name(self):
+        return SEARCH_MODE_NAMES[self._search_mode_idx]
+
+    def get_completions(self, doc, event):
+        prompt_content = doc.text_before_cursor
+        text, groups = SnippetSearcher._parse_group_filters(prompt_content)
+        offset = len(prompt_content) - len(text)
+        doc_text = doc.text[offset:doc.cursor_position - len(text)]
+        cursor_pos = doc.cursor_position - len(text) - offset
+        doc2 = Document(text=doc_text, cursor_position=cursor_pos)
+
+        completions = self._get_fuzzy_completions(self._get_completions(doc2,
+                                                                        event,
+                                                                        groups),
+                                                  text)
+        return completions
+
+    @staticmethod
+    def _parse_group_filters(text):
+        filtered_groups = []
+        rest_text = text
+        if text.startswith('group='):
+            filter_content = text.split(' ')[0]
+            rest_text = ' '.join(text.split(' ')[1:])
+            groups = filter_content.split('=')[1]
+            filtered_groups = groups.split(',')
+        return rest_text, filtered_groups
+
+    def _get_completions(self, doc, event, filter_groups):
+        word = doc.get_word_before_cursor().strip()
+        snippets = self._snippets
+        if filter_groups:
+            snippets = _filter_by_group(self._snippets, filter_groups)
+        for snippet in snippets:
+            match = self._match(snippet, word)
+            if match is None:
+                continue
+            yield Completion(match,
+                             start_position=-len(word),
+                             style='fg:white bg:black',
+                             selected_style='bg:green')
+
+    def _get_fuzzy_completions(self, completions, word):
+        fuzzy_matches = []
+        pat = '.*?'.join(map(re.escape, word))
+        pat = '(?=({0}))'.format(pat)
+        regex = re.compile(pat, re.IGNORECASE)
+        for compl in completions:
+            matches = list(regex.finditer(compl.text))
+            if matches:
+                # Prefer the match, closest to the left, then shortest.
+                best = min(matches, key=lambda m: (m.start(), len(m.group(1))))
+                fuzzy_matches.append(_FuzzyMatch(len(best.group(1)),
+                                                 best.start(),
+                                                 compl))
+
+        def sort_key(fuzzy_match):
+            " Sort by start position, then by the length of the match. "
+            return fuzzy_match.start_pos, fuzzy_match.match_length
+
+        fuzzy_matches = sorted(fuzzy_matches, key=sort_key)
+
+        for match in fuzzy_matches:
+            old_comp = match.completion
+            start_pos = old_comp.start_position - len(word)
+            display = self._get_display(match, word)
+            style = old_comp.style
+            selected_style = old_comp.selected_style
+            completion = Completion(old_comp.text,
+                                    display=display,
+                                    start_position=start_pos,
+                                    style=style,
+                                    selected_style=selected_style)
+            yield completion
