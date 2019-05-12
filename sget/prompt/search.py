@@ -32,22 +32,22 @@ def _filter_by_group(snippets, filter_groups):
 
 
 class SnippetSearcher(FuzzyCompleter):
-    SEARCH_MODES = (_content_match, _name_match, _description_match)
-    SEARCH_MODE_NAMES = ('CONTENT', 'NAME', 'DESCRIPTION')
+    SEARCH_MODES = {'CONTENT': _content_match,
+                    'NAME': _name_match,
+                    'DESCRIPTION': _description_match}
 
     def __init__(self, snippets):
         super(SnippetSearcher).__init__()
         self._snippets = snippets
-        self._search_mode_idx = -1
+        self._mode_idx = -1
+        self.match = None
+        self.search_mode = ''
         self.toggle_search_mode()
 
     def toggle_search_mode(self):
-        next_idx = (self._search_mode_idx + 1) % len(SnippetSearcher.SEARCH_MODES)
-        self._search_mode_idx = next_idx
-        self._match = SnippetSearcher.SEARCH_MODES[next_idx]
-
-    def get_search_mode_name(self):
-        return SEARCH_MODE_NAMES[self._search_mode_idx]
+        self._mode_idx = (self._mode_idx + 1) % len(SnippetSearcher.SEARCH_MODES)
+        self.search_mode = list(SnippetSearcher.SEARCH_MODES.keys())[self._mode_idx]
+        self.match = SnippetSearcher.SEARCH_MODES[self.search_mode]
 
     def get_completions(self, doc, event):
         prompt_content = doc.text_before_cursor
@@ -80,7 +80,7 @@ class SnippetSearcher(FuzzyCompleter):
         if filter_groups:
             snippets = _filter_by_group(self._snippets, filter_groups)
         for snippet in snippets:
-            match = self._match(snippet, word)
+            match = self.match(snippet, word)
             if match is None:
                 continue
             yield Completion(match,

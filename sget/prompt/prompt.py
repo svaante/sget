@@ -31,7 +31,7 @@ def select_snippet(snippets):
     prompt_content = session.prompt(HTML('> '), completer=snippet_searcher)
     text, _ = SnippetSearcher._parse_group_filters(prompt_content)
     for snippet in snippets:
-        if snippet_searcher._match(snippet, text):
+        if snippet_searcher.match(snippet, text):
             return snippet
 
 
@@ -135,8 +135,8 @@ class SplitPromptSession(PromptSession):
 
     def update_toolbar_text(self):
             toolbar_text = []
-            for i, search_mode in enumerate(self.completer.SEARCH_MODE_NAMES):
-                if i == self.completer._search_mode_idx:
+            for search_mode in self.completer.SEARCH_MODES.keys():
+                if search_mode == self.completer.search_mode:
                     style_class = 'fg:green'
                 else:
                     style_class = 'fg:gray'
