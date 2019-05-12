@@ -1,5 +1,8 @@
 from prompt_toolkit.completion import FuzzyCompleter, Completion
 from prompt_toolkit.completion.fuzzy_completer import _FuzzyMatch
+from prompt_toolkit.layout.menus import _get_menu_item_fragments
+from prompt_toolkit.layout.controls import UIControl, UIContent
+from prompt_toolkit.application.current import get_app
 from prompt_toolkit.buffer import Document
 
 import re
@@ -120,3 +123,25 @@ class SnippetSearcher(FuzzyCompleter):
                                     style=style,
                                     selected_style=selected_style)
             yield completion
+
+
+class SearchControl(UIControl):
+    def has_focus(self):
+        return False
+
+    def create_content(self, width, height):
+        complete_state = get_app().current_buffer.complete_state
+        if complete_state:
+            completions = complete_state.completions
+            completion_index = complete_state.complete_index
+        else:
+            completions = []
+            completion_index = -1
+
+        def get_line(idx):
+            completion = completions[idx]
+            is_curr_completion = (idx == completion_index)
+            return _get_menu_item_fragments(completion,
+                                            is_curr_completion,
+                                            width)
+        return UIContent(get_line, line_count=len(completions))
