@@ -3,7 +3,6 @@ import pyperclip
 
 
 from sget import storage
-from sget import share as _share
 from sget.prompt import prompt
 
 
@@ -48,11 +47,6 @@ def get(name=None):
 def rm(name=None):
     snippet = _get_snippet(name)
     storage.rm_snippet(snippet)
-
-
-def share(name=None):
-    snippet = _get_snippet(name)
-    return _share.share(snippet)
 
 
 def clear(name=None):
