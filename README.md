@@ -15,7 +15,8 @@ pip install -e .
 sget add "grep -r "sget" *" --name grep_sget --description "simple grep" --groups unix
 
 # Add many snippets from a .toml file
-sget install defaults/bash.toml
+curl https://raw.githubusercontent.com/ONordander/snippets/master/unix.toml -o unix.toml
+sget install unix.toml
 
 # Get a snippet from search prompt
 sget
