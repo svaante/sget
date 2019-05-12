@@ -6,7 +6,7 @@
 ```bash
 git clone git@github.com:ONordander/sget.git
 cd sget
-pip install -e .
+pip install .
 ```
 
 ## USAGE
@@ -32,3 +32,6 @@ sget list -g unix
 
 # Clear all snippets
 sget clear
+
+# Vim integration
+nnoremap <expr> <Leader>s ":!sget get<Space>" . input("Snippet name (leave blank to search): ") . "<CR>"
