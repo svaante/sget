@@ -30,11 +30,10 @@ import re
 def select_snippet(snippets):
     snippet_completer = SnippetCompleter(snippets)
     session = SplitPromptSession()
-    snippet_meta = session.prompt(HTML('> '), completer=snippet_completer)
-    snippet_meta, _ = _strip_prefix(snippet_meta)
-    snippet_meta = snippet_meta.strip()
+    prompt_content = session.prompt(HTML('> '), completer=snippet_completer)
+    text, _ = SnippetCompleter._parse_group_filters(prompt_content)
     for snippet in snippets:
-        if _match(snippet, snippet_meta):
+        if snippet_completer._match(snippet, text):
             return snippet
 
 
@@ -44,12 +43,6 @@ def _strip_prefix(word):
         return word, ''
     else:
         return word[2:], prefix
-
-
-def _match(snippet, snippet_meta):
-    return (snippet.content == snippet_meta
-            or snippet.description == snippet_meta
-            or snippet.name == snippet_meta)
 
 
 def confirm(msg):
@@ -138,8 +131,8 @@ class SplitPromptSession(PromptSession):
             full_screen=True,
             key_bindings=merge_key_bindings([
                 merge_key_bindings([
-                    prompt_bindings,
-                    search_mode_bindings
+                    search_mode_bindings,
+                    prompt_bindings
                 ]),
             ]),
             color_depth=lambda: self.color_depth,
@@ -154,7 +147,7 @@ class SplitPromptSession(PromptSession):
         handle = key_bindings.add
         default_focused = has_focus(DEFAULT_BUFFER)
 
-        @handle('c-m', filter=default_focused)
+        @handle('c-w', filter=default_focused)
         def _(event):
             buf = event.current_buffer
             self.completer.toggle_search_mode()
@@ -172,7 +165,8 @@ class SplitPromptSession(PromptSession):
                     style_class = 'fg:gray'
                 toolbar_text.append((style_class, search_mode))
                 toolbar_text.append(('fg:gray', '  |  '))
-            return toolbar_text[0:-1]
+            toolbar_text.append(('fg:gray', '(ctrl+w to toggle)'))
+            return toolbar_text
 
 
 class CompletionsWidgetControl(UIControl):
@@ -243,7 +237,7 @@ class SnippetCompleter(FuzzyCompleter):
 
     def get_completions(self, doc, event):
         prompt_content = doc.text_before_cursor
-        text, groups = self._parse_group_filters(prompt_content)
+        text, groups = SnippetCompleter._parse_group_filters(prompt_content)
         offset = len(prompt_content) - len(text)
         doc_text = doc.text[offset:doc.cursor_position - len(text)]
         cursor_pos = doc.cursor_position - len(text) - offset
@@ -255,7 +249,8 @@ class SnippetCompleter(FuzzyCompleter):
                                                   text)
         return completions
 
-    def _parse_group_filters(self, text):
+    @staticmethod
+    def _parse_group_filters(text):
         filtered_groups = []
         rest_text = text
         if text.startswith('group='):
