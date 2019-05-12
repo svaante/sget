@@ -16,7 +16,6 @@ def get_all_snippets():
 
 
 def add_snippet(content, description, name, groups):
-    _make_root_dir()
     snippet = Snippet(content, description, name, groups)
     error = _add_snippets((snippet,))
     if error:
@@ -76,4 +75,6 @@ def _get_snippet_dicts():
 def _make_root_dir():
     if not os.path.exists(cfg.root_dir):
         os.mkdir(cfg.root_dir)
+_make_root_dir()
+
 
