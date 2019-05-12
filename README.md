@@ -1,13 +1,15 @@
+# SGET
+
 [![asciicast](https://asciinema.org/a/tphk9GPW0ZDGMrKLzoGqbhZYE.png)](https://asciinema.org/a/tphk9GPW0ZDGMrKLzoGqbhZYE?speed=3)
 
-# INSTALL
+## INSTALL
 ```bash
-git clone git@github.com/ONordander/sget
+git clone git@github.com:ONordander/sget.git
 cd sget
 pip install -e .
 ```
 
-# USAGE
+## USAGE
 ```bash
 # Add a snippet
 sget add "grep -r "sget" *" --name grep_sget --description "simple grep" --groups unix
