@@ -11,6 +11,8 @@ from prompt_toolkit.formatted_text import to_formatted_text
 from prompt_toolkit.application import Application
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.clipboard import DynamicClipboard
+from prompt_toolkit.layout.containers import ConditionalContainer
+from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.controls import (
     BufferControl,
     FormattedTextControl,
@@ -18,14 +20,11 @@ from prompt_toolkit.layout.controls import (
     UIContent
 )
 from prompt_toolkit.enums import DEFAULT_BUFFER
-from prompt_toolkit.key_binding.bindings.auto_suggest import load_auto_suggest_bindings
 from prompt_toolkit.key_binding.key_bindings import (
     ConditionalKeyBindings,
     DynamicKeyBindings,
     merge_key_bindings,
-)
-from prompt_toolkit.key_binding.bindings.open_in_editor import (
-    load_open_in_editor_bindings,
+    KeyBindings,
 )
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.styles import (
@@ -35,7 +34,7 @@ from prompt_toolkit.styles import (
     SwapLightAndDarkStyleTransformation,
     merge_style_transformations,
 )
-from prompt_toolkit.filters import has_focus, is_done, Condition
+from prompt_toolkit.filters import has_focus, is_done, Condition, renderer_height_is_known
 from prompt_toolkit.layout.processors import (
     AppendAutoSuggestion,
     ConditionalProcessor,
@@ -43,7 +42,6 @@ from prompt_toolkit.layout.processors import (
     DynamicProcessor,
     HighlightIncrementalSearchProcessor,
     HighlightSelectionProcessor,
-    PasswordProcessor,
     merge_processors,
 )
 
@@ -85,6 +83,7 @@ def confirm(msg):
 class SplitPromptSession(PromptSession):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.bottom_toolbar = self.update_toolbar_text
 
     def _create_layout(self):
         """
@@ -131,13 +130,24 @@ class SplitPromptSession(PromptSession):
         divider = Window(char='.', height=1, style='bg:black')
         completion_window = Window(content=CompletionsWidgetControl(),
                 style='')
+        bottom_toolbar = ConditionalContainer(
+            Window(FormattedTextControl(
+                        lambda: self.bottom_toolbar),
+                        #style='class:bottom-toolbar.text'),
+                   #style='class:bottom-toolbar',
+                   dont_extend_height=True,
+                   height=Dimension(min=1)),
+            filter=~is_done & renderer_height_is_known &
+                    Condition(lambda: self.bottom_toolbar is not None))
+
 
         # Build the layout.
         layout = HSplit([
             prompt_window,
             default_buffer_window,
             divider,
-            completion_window
+            completion_window,
+            bottom_toolbar
         ])
 
         return Layout(layout, default_buffer_window)
@@ -150,6 +160,7 @@ class SplitPromptSession(PromptSession):
 
         # Default key bindings.
         prompt_bindings = self._create_prompt_bindings()
+        search_mode_bindings = self._create_search_mode_bindings()
 
         # Create application
         application = Application(
@@ -160,7 +171,8 @@ class SplitPromptSession(PromptSession):
             clipboard=DynamicClipboard(lambda: self.clipboard),
             key_bindings=merge_key_bindings([
                 merge_key_bindings([
-                    prompt_bindings
+                    prompt_bindings,
+                    search_mode_bindings
                 ]),
                 DynamicKeyBindings(lambda: self.key_bindings),
             ]),
@@ -173,6 +185,34 @@ class SplitPromptSession(PromptSession):
             output=self.output)
 
         return application
+
+
+    def _create_search_mode_bindings(self):
+        key_bindings = KeyBindings()
+        handle = key_bindings.add
+        default_focused = has_focus(DEFAULT_BUFFER)
+
+        @handle('c-n', filter=default_focused)
+        def _(event):
+            complete_state = event.current_buffer.complete_state
+            self.completer.toggle_search_mode()
+            self.update_toolbar_text()
+            if complete_state:
+                doc = complete_state.original_document
+                complete_state.completions = list(self.completer.get_completions(doc, event))
+                complete_state.completion_index = 0
+        return key_bindings
+
+    def update_toolbar_text(self):
+            toolbar_text = []
+            for i, search_mode in enumerate(self.completer.SEARCH_MODE_NAMES):
+                if i == self.completer._search_mode_idx:
+                    style_class = 'fg:green'
+                else:
+                    style_class = 'fg:gray'
+                toolbar_text.append((style_class, search_mode))
+                toolbar_text.append(('fg:gray', '  |  '))
+            return toolbar_text[0:-1]
 
 
 class CompletionsWidgetControl(UIControl):
@@ -215,47 +255,63 @@ def _description_match(snippet, word):
     return None
 
 
-def _group_match(snippet, word):
-    for group in snippet.groups:
-        if group.startswith(word):
-            words = word.split(' ')
-            rest_after_group = ''
-            if len(words) > 1:
-                rest_after_group = ' '.join(words[1:])
-            return _content_match(snippet, rest_after_group)
-    return None
-
-
-CATEGORY_MATCHERS = {'c:': _content_match,
-                     'n:': _name_match,
-                     'd:': _description_match,
-                     'g:': _group_match}
+def _filter_by_group(snippets, filter_groups):
+    for snippet in snippets:
+        for group in snippet.groups:
+            if group in filter_groups:
+                yield snippet
+                break
 
 
 class SnippetCompleter(FuzzyCompleter):
+    SEARCH_MODES = (_content_match, _name_match, _description_match)
+    SEARCH_MODE_NAMES = ('CONTENT', 'NAME', 'DESCRIPTION')
 
     def __init__(self, snippets):
         super(SnippetCompleter).__init__()
         self._snippets = snippets
+        self._search_mode_idx = -1
+        self.toggle_search_mode()
+
+    def toggle_search_mode(self):
+        next_idx = (self._search_mode_idx + 1) % len(SnippetCompleter.SEARCH_MODES)
+        self._search_mode_idx = next_idx
+        self._match = SnippetCompleter.SEARCH_MODES[next_idx]
+
+    def get_search_mode_name(self):
+        return SEARCH_MODE_NAMES[self._search_mode_idx]
 
     def get_completions(self, doc, event):
         prompt_content = doc.text_before_cursor
-        word, prefix = _strip_prefix(prompt_content)
-        word = word.split(' ')[-1]
-        self._match = CATEGORY_MATCHERS.get(prefix, _content_match)
-        offset = len(prefix)
+        text, groups = self._parse_group_filters(prompt_content)
+        word = text.split(' ')[0]
+        offset = len(prompt_content) - len(text)
         doc_text = doc.text[offset:doc.cursor_position - len(word)]
         cursor_pos = doc.cursor_position - len(word) - offset
         doc2 = Document(text=doc_text, cursor_position=cursor_pos)
 
         completions = self._get_fuzzy_completions(self._get_completions(doc2,
-                                                                        event),
+                                                                        event,
+                                                                        groups),
                                                   word)
         return completions
 
-    def _get_completions(self, doc, event):
+    def _parse_group_filters(self, text):
+        filtered_groups = []
+        rest_text = text
+        if text.startswith('group='):
+            filter_content = text.split(' ')[0]
+            rest_text = ' '.join(text.split(' ')[1:])
+            groups = filter_content.split('=')[1]
+            filtered_groups = groups.split(',')
+        return rest_text, filtered_groups
+
+    def _get_completions(self, doc, event, filter_groups):
         word = doc.get_word_before_cursor().strip()
-        for snippet in self._snippets:
+        snippets = self._snippets
+        if filter_groups:
+            snippets = _filter_by_group(self._snippets, filter_groups)
+        for snippet in snippets:
             match = self._match(snippet, word)
             if match is None:
                 continue
