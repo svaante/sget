@@ -12,5 +12,9 @@ class Config():
     def snippet_file(self):
         return self._snippet_file
 
+    @property
+    def root_dir(self):
+        return self._root_dir
+
 
 config = Config()
