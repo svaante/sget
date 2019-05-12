@@ -156,13 +156,11 @@ class SplitPromptSession(PromptSession):
 
         @handle('c-m', filter=default_focused)
         def _(event):
-            complete_state = event.current_buffer.complete_state
+            buf = event.current_buffer
             self.completer.toggle_search_mode()
+            buf.complete_state = None
+            buf.start_completion()
             self.update_toolbar_text()
-            if complete_state:
-                doc = complete_state.original_document
-                complete_state.completions = list(self.completer.get_completions(doc, event))
-                complete_state.completion_index = 0
         return key_bindings
 
     def update_toolbar_text(self):
