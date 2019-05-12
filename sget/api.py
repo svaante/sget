@@ -2,9 +2,9 @@ import click
 import pyperclip
 
 
-from snip import storage
-from snip import share as _share
-from snip.prompt import prompt
+from sget import storage
+from sget import share as _share
+from sget.prompt import prompt
 
 
 def list(group=None):

@@ -1,7 +1,7 @@
 import click
 
 
-from snip import api
+from sget import api
 
 
 @click.group(invoke_without_command=True)

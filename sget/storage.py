@@ -4,8 +4,8 @@ import os
 import toml
 
 
-from snip.config import config as cfg
-from snip.snippet import Snippet
+from sget.config import config as cfg
+from sget.snippet import Snippet
 
 
 def get_all_snippets():

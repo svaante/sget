@@ -12,10 +12,10 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 # Package meta-data.
-NAME = 'snip'
-DESCRIPTION = 'Snippet manager.'
-URL = 'https://github.com/ONordander/snippy'
-EMAIL = 'me@example.com'
+NAME = 'sget'
+DESCRIPTION = 'A simple snippet manager.'
+URL = 'https://github.com/ONordander/sget'
+EMAIL = 'otto.nordander@gmail.com'
 AUTHOR = 'Otto Nordander'
 REQUIRES_PYTHON = '>=3.6.0'
 VERSION = '0.1.0'
@@ -104,7 +104,7 @@ setup(
     # py_modules=['mypackage'],
 
     entry_points={
-         'console_scripts': ['snip=snip:cli'],
+         'console_scripts': ['sget=sget:cli'],
     },
     install_requires=REQUIRED,
     include_package_data=True,

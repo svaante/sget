@@ -1,16 +1,14 @@
-from prompt_toolkit.completion import Completer, Completion, FuzzyCompleter, WordCompleter
+from prompt_toolkit.completion import Completion, FuzzyCompleter
 from prompt_toolkit.completion.fuzzy_completer import _FuzzyMatch
 from prompt_toolkit.lexers import DynamicLexer
 from prompt_toolkit.document import Document
 from prompt_toolkit.shortcuts import prompt, PromptSession
-from prompt_toolkit.shortcuts.prompt import _split_multiline_prompt, CompleteStyle
+from prompt_toolkit.shortcuts.prompt import _split_multiline_prompt
 from prompt_toolkit import print_formatted_text, HTML
 from prompt_toolkit.layout import HSplit, Window
 from prompt_toolkit.layout.menus import _get_menu_item_fragments
-from prompt_toolkit.formatted_text import to_formatted_text
 from prompt_toolkit.application import Application
 from prompt_toolkit.application.current import get_app
-from prompt_toolkit.clipboard import DynamicClipboard
 from prompt_toolkit.layout.containers import ConditionalContainer
 from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.controls import (
@@ -20,30 +18,10 @@ from prompt_toolkit.layout.controls import (
     UIContent
 )
 from prompt_toolkit.enums import DEFAULT_BUFFER
-from prompt_toolkit.key_binding.key_bindings import (
-    ConditionalKeyBindings,
-    DynamicKeyBindings,
-    merge_key_bindings,
-    KeyBindings,
-)
+from prompt_toolkit.key_binding.key_bindings import merge_key_bindings, KeyBindings
 from prompt_toolkit.layout.layout import Layout
-from prompt_toolkit.styles import (
-    ConditionalStyleTransformation,
-    DynamicStyle,
-    DynamicStyleTransformation,
-    SwapLightAndDarkStyleTransformation,
-    merge_style_transformations,
-)
 from prompt_toolkit.filters import has_focus, is_done, Condition, renderer_height_is_known
-from prompt_toolkit.layout.processors import (
-    AppendAutoSuggestion,
-    ConditionalProcessor,
-    DisplayMultipleCursors,
-    DynamicProcessor,
-    HighlightIncrementalSearchProcessor,
-    HighlightSelectionProcessor,
-    merge_processors,
-)
+from prompt_toolkit.layout.processors import DynamicProcessor, merge_processors
 
 from functools import partial
 import re
@@ -99,15 +77,7 @@ class SplitPromptSession(PromptSession):
         default_buffer = self.default_buffer
         search_buffer = self.search_buffer
 
-        # Create processors list.
         all_input_processors = [
-            HighlightIncrementalSearchProcessor(),
-            HighlightSelectionProcessor(),
-            ConditionalProcessor(AppendAutoSuggestion(),
-                                 has_focus(default_buffer) & ~is_done),
-            DisplayMultipleCursors(),
-
-            # Users can insert processors here.
             DynamicProcessor(lambda: merge_processors(self.input_processors or [])),
         ]
 
@@ -166,20 +136,12 @@ class SplitPromptSession(PromptSession):
         application = Application(
             layout=self.layout,
             full_screen=True,
-            style=DynamicStyle(lambda: self.style),
-            include_default_pygments_style=dyncond('include_default_pygments_style'),
-            clipboard=DynamicClipboard(lambda: self.clipboard),
             key_bindings=merge_key_bindings([
                 merge_key_bindings([
                     prompt_bindings,
                     search_mode_bindings
                 ]),
-                DynamicKeyBindings(lambda: self.key_bindings),
             ]),
-            mouse_support=dyncond('mouse_support'),
-            editing_mode=editing_mode,
-            erase_when_done=erase_when_done,
-            reverse_vi_search_direction=True,
             color_depth=lambda: self.color_depth,
             input=self.input,
             output=self.output)
