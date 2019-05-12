@@ -32,6 +32,9 @@ sget list -g unix
 
 # Clear all snippets
 sget clear
+```
 
-# Vim integration
+## Vim integration
+```bash
 nnoremap <expr> <Leader>s ":!sget get<Space>" . input("Snippet name (leave blank to search): ") . "<CR>"
+```
