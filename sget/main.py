@@ -4,6 +4,7 @@ import pyperclip
 
 from sget import api
 from sget import tty
+from sget.prompt import prompt
 
 
 @click.group(invoke_without_command=True)
@@ -121,7 +122,7 @@ def _snippet_to_clipboard(snippet):
 
 def _run(snippet):
     runnable = _filter(snippet.content)
-    tty.put_text(runnable, run=True)
+    tty.put_text(runnable, run=False)
 
 
 def _filter(runnable):
