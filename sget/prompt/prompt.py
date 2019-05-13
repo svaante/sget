@@ -13,6 +13,7 @@ from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.filters import has_focus, is_done, Condition, renderer_height_is_known
 
 from functools import partial
+import re
 
 from sget.prompt.search import SnippetSearcher, SearchControl
 
@@ -25,6 +26,24 @@ def select_snippet(snippets):
     for snippet in snippets:
         if snippet_searcher.match(snippet, text):
             return snippet
+
+
+def fill_template(content):
+    answers = []
+    offset = 0
+    for match in re.finditer('<\$>', content):
+        span = match.span()
+        start_pos = span[0] + offset
+        end_pos = span[1] + offset
+        length = end_pos - start_pos
+        pre = content[0:start_pos]
+        curr = content[start_pos:end_pos]
+        post = content[end_pos:]
+        formatted_text = [('fg:white', pre), ('fg:green', '_____'), ('fg:white', post + ': ')]
+        answer = prompt(formatted_text)
+        offset += len(answer) - len('<$>')
+        content = content.replace('<$>', answer, 1)
+    return content
 
 
 def confirm(msg):

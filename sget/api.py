@@ -2,6 +2,7 @@ import click
 
 
 from sget import storage
+from sget.snippet import Snippet
 from sget.prompt import prompt
 
 
@@ -31,6 +32,12 @@ def install(snippets_file):
 
 def get(name=None):
     snippet = _get_snippet(name)
+    if snippet.is_template:
+        content = prompt.fill_template(snippet.content)
+        snippet = Snippet(content,
+                          name=snippet.name,
+                          description=snippet.description,
+                          groups=snippet.groups)
     return snippet
 
 
