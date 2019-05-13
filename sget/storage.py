@@ -8,6 +8,13 @@ from sget.config import config as cfg
 from sget.snippet import Snippet
 
 
+def _make_root_dir():
+    if not os.path.exists(cfg.root_dir):
+        os.mkdir(cfg.root_dir)
+
+_make_root_dir()
+
+
 def get_all_snippets():
     snippet_dicts = _get_snippet_dicts()
     snippets = [Snippet.from_dict(d, name)
@@ -24,7 +31,11 @@ def add_snippet(content, description, name, groups):
 
 def get_snippet(name):
     snippets = _get_snippet_dicts()
-    return Snippet.from_dict(snippets[name], name)
+    try:
+        snippet = Snippet.from_dict(snippets[name], name)
+    except KeyError as e:
+        snippet = _find_by_partial_name(name, snippets)
+    return snippet
 
 
 def rm_snippet(snippet):
@@ -45,6 +56,25 @@ def install_from_file(input_file):
                 for (name, d) in snippet_dicts.items()]
     errors = _add_snippets(snippets)
     return errors
+
+
+def _find_by_partial_name(name, snippets):
+    candidates = []
+    for snippet_name in snippets:
+        snippet = Snippet.from_dict(snippets[snippet_name], snippet_name)
+        if snippet.name.startswith(name):
+            candidates.append(snippet)
+
+    n_found = len(candidates)
+    if n_found > 1:
+        msg = 'Ambiguous name, found the following candidates:\n{}'
+        candidates_str = '\n'.join((s.name for s in candidates))
+        raise LookupError(msg.format(candidates_str))
+    elif n_found == 0:
+        msg = 'No snippet found with name {}!'
+        raise LookupError(msg.format(name))
+
+    return candidates[0]
 
 
 def _add_snippets(snippets):
@@ -70,11 +100,3 @@ def _get_snippet_dicts():
         return data
     except FileNotFoundError:
         return {}
-
-
-def _make_root_dir():
-    if not os.path.exists(cfg.root_dir):
-        os.mkdir(cfg.root_dir)
-_make_root_dir()
-
-
