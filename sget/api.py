@@ -1,5 +1,4 @@
 import click
-import pyperclip
 
 
 from sget import storage
@@ -32,7 +31,7 @@ def install(snippets_file):
 
 def get(name=None):
     snippet = _get_snippet(name)
-    _snippet_to_clipboard(snippet)
+    return snippet
 
 
 def rm(name=None):
@@ -65,7 +64,3 @@ def _query_snippet():
     if not snippet:
         raise LookupError('No matching snippet found!')
     return snippet
-
-
-def _snippet_to_clipboard(snippet):
-    pyperclip.copy(snippet.content)

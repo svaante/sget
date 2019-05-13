@@ -78,7 +78,7 @@ class SnippetCollection():
             collection_group.add(snippet.name)
 
     def rm(self, name):
-        snippet = self._lookup[name]
+        snippet = self.get(name)
         for group in snippet.groups:
             try:
                 self._groups[group].remove(snippet.name)

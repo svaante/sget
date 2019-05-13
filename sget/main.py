@@ -1,7 +1,9 @@
 import click
+import pyperclip
 
 
 from sget import api
+from sget import tty
 
 
 @click.group(invoke_without_command=True)
@@ -47,7 +49,7 @@ def rm(name):
         api.rm(name)
         msg = 'Snippet successfully removed!'
         _success(msg)
-    except Exception as e:
+    except LookupError as e:
         _error(str(e))
 
 
@@ -57,10 +59,22 @@ def get(name):
     if name:
         name = ' '.join(name)
     try:
-        api.get(name)
-        msg = 'Snippet copied to clipboard!'
-        _success(msg)
-    except Exception as e:
+        snippet = api.get(name)
+        _run(snippet)
+    except LookupError as e:
+        _error(str(e))
+
+
+@cli.command()
+@click.argument('name', default=None, required=False, nargs=-1)
+def cp(name):
+    if name:
+        name = ' '.join(name)
+    try:
+        snippet = api.get(name)
+        _snippet_to_clipboard(snippet)
+        _success('Copied snippet to clipboard')
+    except LookupError as e:
         _error(str(e))
 
 
@@ -99,6 +113,22 @@ def list(group):
 def _add_tab(text):
     text = '\t' + text
     return text.replace('\n', '\n\t')
+
+
+def _snippet_to_clipboard(snippet):
+    pyperclip.copy(snippet.content)
+
+
+def _run(snippet):
+    runnable = _filter(snippet.content)
+    tty.put_text(runnable, run=True)
+
+
+def _filter(runnable):
+    runnable = runnable.replace(' \ ', '')
+    runnable = runnable.replace('\n', '')
+    runnable = runnable.replace('\r', '')
+    return runnable
 
 
 def _success(msg):
