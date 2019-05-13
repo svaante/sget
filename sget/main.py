@@ -83,7 +83,22 @@ def clear():
 @cli.command()
 @click.option('-g', '--group', default=None)
 def list(group):
-    api.list(group=group)
+    collection = api.get_all(group=group)
+    for group in collection.groups():
+        click.echo(click.style(group, fg='cyan'))
+        for snippet in collection.get_group(group):
+            name = _add_tab('Name - {}'.format(snippet.name))
+            desc = _add_tab('Description - {}'.format(snippet.description))
+            content = _add_tab(snippet.content)
+            click.secho(name, fg='red')
+            click.secho(desc, fg='green')
+            click.secho(content, fg='yellow')
+            click.echo('\n')
+
+
+def _add_tab(text):
+    text = '\t' + text
+    return text.replace('\n', '\n\t')
 
 
 def _success(msg):

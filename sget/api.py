@@ -6,21 +6,12 @@ from sget import storage
 from sget.prompt import prompt
 
 
-def list(group=None):
-    snippets = storage.get_all_snippets()
-    if group:
-        snippets = _filters_snippets_by_group(snippets, group)
-
-    for snippet in snippets:
-        name = 'Name - {}'.format(snippet.name)
-        desc = 'Description - {}'.format(snippet.description)
-        groups = 'Groups - {}'.format(snippet.groups)
-        content = snippet.content
-        click.echo(click.style(name, fg='green'))
-        click.echo(click.style(desc, fg='green'))
-        click.echo(click.style(groups, fg='green'))
-        click.echo(click.style(content, fg='red'))
-        click.echo('_' * 50)
+def get_all(group=None):
+    collection = storage.get_all_snippets()
+    if group is not None:
+        return collection.get_group(group)
+    else:
+        return collection
 
 
 def add(content, description, name, groups):

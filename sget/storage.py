@@ -84,7 +84,7 @@ def _add_snippets(snippets):
             msg = 'Could not add {}, name already exists.'
             errors.append(msg.format(name))
             continue
-        collection.add(name, snippet)
+        collection.add(snippet)
 
     with open(cfg.snippet_file, 'w') as f:
         f.write(toml.dumps(collection.to_dict()))

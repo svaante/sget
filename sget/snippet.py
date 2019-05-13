@@ -46,23 +46,44 @@ class Snippet():
 class SnippetCollection():
     def __init__(self, snippets=None):
         self._lookup = {}
-        for snippet in snippets or []:
-            self._lookup[snippet.name] = snippet.to_dict()
+        self._groups = {}
+        if snippets:
+            for snippet in snippets:
+                self.add(snippet)
 
     def __iter__(self):
         for name, snippet in self._lookup.items():
             yield Snippet.from_dict(snippet, name)
 
+    def groups(self):
+        return list(self._groups.keys())
+
+    def get_group(self, group):
+        collection = SnippetCollection()
+        for name in self._groups[group]:
+            collection.add(self.get(name))
+        return collection
+
     def get(self, name):
         return Snippet.from_dict(self._lookup[name], name)
 
-    def add(self, name, snippet, overwrite=False):
+    def add(self, snippet, overwrite=False):
+        name = snippet.name
         if self._lookup.get(name) is not None and not overwrite:
             msg = 'Snippet with name {} already exists'
             raise ValueError(msg.format(name))
         self._lookup[name] = snippet.to_dict()
+        for group in snippet.groups:
+            collection_group = self._groups.setdefault(group, set())
+            collection_group.add(snippet.name)
 
     def rm(self, name):
+        snippet = self._lookup[name]
+        for group in snippet.groups:
+            try:
+                self._groups[group].remove(snippet.name)
+            except KeyError:
+                pass
         del self._lookup[name]
 
     def exists(self, name):
@@ -75,6 +96,6 @@ class SnippetCollection():
     def from_dict(snippet_dict):
         collection = SnippetCollection()
         for name, snippet in snippet_dict.items():
-            collection._lookup[name] = snippet
+            collection.add(Snippet.from_dict(snippet, name))
         return collection
 
