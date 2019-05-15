@@ -61,7 +61,7 @@ def get(name):
         name = ' '.join(name)
     try:
         snippet = api.get(name)
-        _run(snippet)
+        tty.put_text(snippet.content)
     except LookupError as e:
         _error(str(e))
 
@@ -91,8 +91,10 @@ def install(snippets_file):
 
 @cli.command()
 def clear():
-    api.clear()
-    _success('Cleared all snippets!')
+    msg = 'You are about to clear all your saved snippets, are you sure?'
+    if prompt.confirm(msg):
+        api.clear()
+        _success('Cleared all snippets!')
 
 
 @cli.command()
@@ -118,18 +120,6 @@ def _add_tab(text):
 
 def _snippet_to_clipboard(snippet):
     pyperclip.copy(snippet.content)
-
-
-def _run(snippet):
-    runnable = _filter(snippet.content)
-    tty.put_text(runnable, run=False)
-
-
-def _filter(runnable):
-    runnable = runnable.replace(' \ ', '')
-    runnable = runnable.replace('\n', '')
-    runnable = runnable.replace('\r', '')
-    return runnable
 
 
 def _success(msg):

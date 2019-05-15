@@ -47,14 +47,7 @@ def rm(name=None):
 
 
 def clear(name=None):
-    msg = 'You are about to clear all your saved snippets, are you sure?'
-    if prompt.confirm(msg):
-        storage.clear_snippets()
-
-
-def _filters_snippets_by_group(snippets, group):
-    filtered = [s for s in snippets if group in s.groups]
-    return filtered
+    storage.clear_snippets()
 
 
 def _get_snippet(name=None):
