@@ -1,12 +1,37 @@
 import os
+import toml
+
+DEFAULT_CONFIG = {'sget': {'editor': ''}}
 
 
 class Config():
     def __init__(self):
         self._snippet_file_name = 'snippets.toml'
         self._root_dir = os.path.expanduser('~/.sget')
+        self._file = os.path.join(self._root_dir, 'config.toml')
         self._snippet_file = os.path.join(self._root_dir,
                                           self._snippet_file_name)
+        try:
+            self._cfg = self._parse_cfg()
+        except IOError:
+            print('not found')
+            self._cfg = self._create_cfg()
+
+    def _parse_cfg(self):
+        with open(self.file, 'r') as f:
+            cfg = toml.loads(f.read())
+            if 'sget' not in cfg:
+                msg = 'Error parsing config file, missing section \'sget\'.'
+                raise ValueError(msg)
+            return cfg
+
+    def _create_cfg(self):
+        with open(self.file, 'w') as f:
+            f.write(toml.dumps(DEFAULT_CONFIG))
+        return DEFAULT_CONFIG
+
+    def _get(self, key):
+        return self._cfg['sget'].get(key, None)
 
     @property
     def snippet_file(self):
@@ -15,6 +40,15 @@ class Config():
     @property
     def root_dir(self):
         return self._root_dir
+
+    @property
+    def file(self):
+        return self._file
+
+    @property
+    def editor(self):
+        return self._get('editor')
+
 
 
 config = Config()

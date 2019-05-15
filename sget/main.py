@@ -5,6 +5,10 @@ import pyperclip
 from sget import api
 from sget import tty
 from sget.prompt import prompt
+from sget.config import config
+
+
+import re
 
 
 @click.group(invoke_without_command=True)
@@ -56,7 +60,7 @@ def rm(name):
 
 @cli.command()
 @click.argument('name', default=None, required=False, nargs=-1)
-def get(name):
+def run(name):
     if name:
         name = ' '.join(name)
     try:
@@ -64,6 +68,11 @@ def get(name):
         tty.put_text(snippet.content)
     except LookupError as e:
         _error(str(e))
+
+
+@cli.command()
+def edit():
+    tty.edit(config.snippet_file)
 
 
 @cli.command()

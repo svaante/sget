@@ -16,7 +16,6 @@ _make_root_dir()
 
 
 def get_all_snippets():
-    collection = SnippetCollection.from_dict({'hehe': {'content': 'asd', 'description': 'hoho', 'groups': []}})
     return SnippetCollection.from_dict(_parse_snippet_file())
 
 
