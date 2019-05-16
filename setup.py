@@ -22,7 +22,7 @@ VERSION = '0.1.0'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'click', 'prompt_toolkit', 'pyperclip', 'toml'
+    'Click>=7.0', 'prompt_toolkit>=2.0.8', 'pyperclip>=1.7.0', 'toml>=0.10.0'
 ]
 
 
