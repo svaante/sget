@@ -15,7 +15,7 @@ import re
 @click.pass_context
 def cli(ctx):
     if ctx.invoked_subcommand is None:
-        get()
+        run()
 
 
 @cli.command()
