@@ -8,13 +8,6 @@ from sget.config import config as cfg
 from sget.snippet import Snippet, SnippetCollection
 
 
-def _make_root_dir():
-    if not os.path.exists(cfg.root_dir):
-        os.mkdir(cfg.root_dir)
-
-_make_root_dir()
-
-
 def get_all_snippets():
     return SnippetCollection.from_dict(_parse_snippet_file())
 

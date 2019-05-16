@@ -11,11 +11,15 @@ class Config():
         self._file = os.path.join(self._root_dir, 'config.toml')
         self._snippet_file = os.path.join(self._root_dir,
                                           self._snippet_file_name)
+        self._make_root_dir()
         try:
             self._cfg = self._parse_cfg()
         except IOError:
-            print('not found')
             self._cfg = self._create_cfg()
+
+    def _make_root_dir(self):
+        if not os.path.exists(self.root_dir):
+            os.mkdir(self.root_dir)
 
     def _parse_cfg(self):
         with open(self.file, 'r') as f:
