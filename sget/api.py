@@ -1,9 +1,15 @@
 import click
+import pyperclip
 
 
-from sget import storage
-from sget.snippet import Snippet
+from sget.config import config
 from sget.prompt import prompt
+from sget.snippet import Snippet
+from sget.storage import Storage
+from sget import tty
+
+
+storage = Storage(config.snippet_file)
 
 
 def get_all(group=None):
@@ -25,28 +31,38 @@ def fadd(snippet_file, description, name, groups):
                         groups)
 
 
+def edit_snippets():
+    tty.edit(config.snippet_file)
+
+
 def install(snippets_file):
     errors = storage.install_from_file(snippets_file)
     return errors
 
 
-def get(name=None):
+def run(name=None):
     snippet = _get_snippet(name)
-    if snippet.is_template:
+    if Snippet.is_template:
         content = prompt.fill_template(snippet.content)
         snippet = Snippet(content,
                           name=snippet.name,
                           description=snippet.description,
                           groups=snippet.groups)
-    return snippet
+
+    tty.put_text(snippet.content)
+
+
+def cp(name=None):
+    snippet = _get_snippet(name)
+    _snippet_to_clipboard(snippet)
 
 
 def rm(name=None):
     snippet = _get_snippet(name)
-    storage.rm_snippet(snippet)
+    storage.rm_snippet(snippet.name)
 
 
-def clear(name=None):
+def clear():
     storage.clear_snippets()
 
 
@@ -56,6 +72,10 @@ def _get_snippet(name=None):
     else:
         snippet = storage.get_snippet(name)
     return snippet
+
+
+def _snippet_to_clipboard(snippet):
+    pyperclip.copy(snippet.content)
 
 
 def _query_snippet():

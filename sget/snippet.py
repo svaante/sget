@@ -6,7 +6,6 @@ class Snippet():
         if not groups:
             groups = []
         self._groups = groups
-        self._is_template = Snippet.is_template(content)
 
     @property
     def content(self):
@@ -24,10 +23,6 @@ class Snippet():
     def groups(self):
         return self._groups
 
-    @property
-    def is_template(self):
-        return self._is_template
-
     def to_dict(self):
         return {'content': self.content,
                 'description': self.description,
@@ -37,10 +32,16 @@ class Snippet():
         msg = 'Snippet:\ncontent - {}\ndescription - {}'
         return msg.format(self._content, self._description)
 
+    def __eq__(self, other):
+        return (isinstance(other, Snippet)
+                and self.name == other.name
+                and self.content == other.content
+                and self.description == other.description
+                and self.groups == other.groups)
+
     @staticmethod
     def from_dict(data, name):
         content = data['content']
-        is_template = Snippet.is_template(content)
         description = data['description']
         groups = data.get('groups')
         return Snippet(content=content,
