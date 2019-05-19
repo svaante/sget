@@ -66,6 +66,9 @@ class SnippetCollection():
         for name, snippet in self._lookup.items():
             yield Snippet.from_dict(snippet, name)
 
+    def __len__(self):
+        return len(self._lookup)
+
     def groups(self):
         return list(self._groups.keys())
 
@@ -109,4 +112,3 @@ class SnippetCollection():
         for name, snippet in snippet_dict.items():
             collection.add(Snippet.from_dict(snippet, name))
         return collection
-

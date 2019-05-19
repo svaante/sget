@@ -1,4 +1,7 @@
-from prompt_toolkit.lexers import DynamicLexer
+from functools import partial
+import re
+
+
 from prompt_toolkit.shortcuts import prompt, PromptSession
 from prompt_toolkit.shortcuts.prompt import _split_multiline_prompt
 from prompt_toolkit import print_formatted_text, HTML
@@ -12,9 +15,6 @@ from prompt_toolkit.key_binding.key_bindings import merge_key_bindings, KeyBindi
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.filters import has_focus, is_done, Condition, renderer_height_is_known
 
-from functools import partial
-import re
-
 from sget.prompt.search import SnippetSearcher, SearchControl
 
 
@@ -22,22 +22,20 @@ def select_snippet(snippets):
     snippet_searcher = SnippetSearcher(snippets)
     session = SplitPromptSession()
     prompt_content = session.prompt(HTML('> '), completer=snippet_searcher)
-    text, _ = SnippetSearcher._parse_group_filters(prompt_content)
+    text, _ = SnippetSearcher.parse_group_filters(prompt_content)
     for snippet in snippets:
         if snippet_searcher.match(snippet, text):
             return snippet
+    return None
 
 
 def fill_template(content):
-    answers = []
     offset = 0
-    for match in re.finditer('<\$>', content):
+    for match in re.finditer(r'<\$>', content):
         span = match.span()
         start_pos = span[0] + offset
         end_pos = span[1] + offset
-        length = end_pos - start_pos
         pre = content[0:start_pos]
-        curr = content[start_pos:end_pos]
         post = content[end_pos:]
         formatted_text = [('fg:white', pre), ('fg:green', '_____'), ('fg:white', post + ': ')]
         answer = prompt(formatted_text)
@@ -58,7 +56,7 @@ class SplitPromptSession(PromptSession):
         self.bottom_toolbar = self.update_toolbar_text
 
     def _create_layout(self):
-        has_before_fragments, get_prompt_text_1, get_prompt_text_2 = \
+        _, get_prompt_text_1, get_prompt_text_2 = \
             _split_multiline_prompt(self._get_prompt)
 
         default_buffer = self.default_buffer
@@ -78,13 +76,13 @@ class SplitPromptSession(PromptSession):
                 self._get_line_prefix, get_prompt_text_2=get_prompt_text_2))
         divider = Window(char='_', height=1, style='fg:gray bg:black')
         search_window = Window(content=SearchControl(),
-                style='')
+                               style='')
         bottom_toolbar = ConditionalContainer(
             Window(FormattedTextControl(lambda: self.bottom_toolbar),
                    dont_extend_height=True,
                    height=Dimension(min=1)),
-            filter=~is_done & renderer_height_is_known &
-                    Condition(lambda: self.bottom_toolbar is not None))
+            filter=(~is_done & renderer_height_is_known
+                    & Condition(lambda: self.bottom_toolbar is not None)))
 
         layout = HSplit([
             prompt_window,
@@ -132,13 +130,13 @@ class SplitPromptSession(PromptSession):
         return key_bindings
 
     def update_toolbar_text(self):
-            toolbar_text = []
-            for search_mode in self.completer.SEARCH_MODES.keys():
-                if search_mode == self.completer.search_mode:
-                    style_class = 'fg:green'
-                else:
-                    style_class = 'fg:gray'
-                toolbar_text.append((style_class, search_mode))
-                toolbar_text.append(('fg:gray', '  |  '))
-            toolbar_text.append(('fg:gray', '(ctrl+w to toggle)'))
-            return toolbar_text
+        toolbar_text = []
+        for search_mode in self.completer.SEARCH_MODES.keys():
+            if search_mode == self.completer.search_mode:
+                style_class = 'fg:green'
+            else:
+                style_class = 'fg:gray'
+            toolbar_text.append((style_class, search_mode))
+            toolbar_text.append(('fg:gray', '  |  '))
+        toolbar_text.append(('fg:gray', '(ctrl+w to toggle)'))
+        return toolbar_text

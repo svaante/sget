@@ -1,42 +1,40 @@
-import click
 import pyperclip
 
 
-from sget.config import config
+from sget.config import CONFIG
 from sget.prompt import prompt
 from sget.snippet import Snippet
-from sget.storage import Storage
+from sget.storage import Storage, AmbiguousNameError, SnippetNotFoundError
 from sget import tty
 
 
-storage = Storage(config.snippet_file)
+STORAGE = Storage(CONFIG.snippet_file)
 
 
 def get_all(group=None):
-    collection = storage.get_all_snippets()
+    collection = STORAGE.get_all_snippets()
     if group is not None:
         return collection.get_group(group)
-    else:
-        return collection
+    return collection
 
 
 def add(content, description, name, groups):
-    storage.add_snippet(content, description, name, groups)
+    STORAGE.add_snippet(content, description, name, groups)
 
 
 def fadd(snippet_file, description, name, groups):
-    storage.add_snippet(''.join(snippet_file.readlines()),
+    STORAGE.add_snippet(''.join(snippet_file.readlines()),
                         description,
                         name,
                         groups)
 
 
 def edit_snippets():
-    tty.edit(config.snippet_file)
+    tty.edit(CONFIG.snippet_file)
 
 
 def install(snippets_file):
-    errors = storage.install_from_file(snippets_file)
+    errors = STORAGE.install_from_file(snippets_file)
     return errors
 
 
@@ -59,18 +57,21 @@ def cp(name=None):
 
 def rm(name=None):
     snippet = _get_snippet(name)
-    storage.rm_snippet(snippet.name)
+    STORAGE.rm_snippet(snippet.name)
 
 
 def clear():
-    storage.clear_snippets()
+    STORAGE.clear_snippets()
 
 
 def _get_snippet(name=None):
     if not name:
         snippet = _query_snippet()
     else:
-        snippet = storage.get_snippet(name)
+        try:
+            snippet = STORAGE.get_snippet(name)
+        except AmbiguousNameError:
+            snippet = _query_snippet()
     return snippet
 
 
@@ -79,8 +80,8 @@ def _snippet_to_clipboard(snippet):
 
 
 def _query_snippet():
-    snippets = storage.get_all_snippets()
+    snippets = STORAGE.get_all_snippets()
     snippet = prompt.select_snippet(snippets)
     if not snippet:
-        raise LookupError('No matching snippet found!')
+        raise SnippetNotFoundError()
     return snippet

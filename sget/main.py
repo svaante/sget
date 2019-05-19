@@ -1,13 +1,9 @@
 import click
-import pyperclip
 
 
 from sget import api
-from sget import tty
 from sget.prompt import prompt
-
-
-import re
+from sget.storage import SnippetNotFoundError
 
 
 @click.group(invoke_without_command=True)
@@ -30,8 +26,8 @@ def add(content, description, name, groups):
         api.add(content, description, name, groups)
         msg = 'Snippet successfully added!'
         _success(msg)
-    except IOError as e:
-        _error(str(e))
+    except IOError as err:
+        _error(str(err))
 
 
 @cli.command()
@@ -43,11 +39,11 @@ def fadd(snippet_file, description, name, groups):
     if groups:
         groups = groups.strip().split(',')
     try:
-        api.fadd(Snippet, description, name, groups)
+        api.fadd(snippet_file, description, name, groups)
         msg = 'Snippet successfully added!'
         _success(msg)
-    except IOError as e:
-        _error(str(e))
+    except IOError as err:
+        _error(str(err))
 
 
 @cli.command()
@@ -57,8 +53,8 @@ def rm(name):
         api.rm(name)
         msg = 'Snippet successfully removed!'
         _success(msg)
-    except LookupError as e:
-        _error(str(e))
+    except SnippetNotFoundError as err:
+        _error(str(err))
 
 
 @cli.command()
@@ -66,8 +62,8 @@ def rm(name):
 def run(name):
     try:
         api.run(name)
-    except LookupError as e:
-        _error(str(e))
+    except SnippetNotFoundError as err:
+        _error(str(err))
 
 
 @cli.command()
@@ -81,8 +77,8 @@ def cp(name):
     try:
         api.cp(name)
         _success('Copied snippet to clipboard')
-    except LookupError as e:
-        _error(str(e))
+    except SnippetNotFoundError as err:
+        _error(str(err))
 
 
 @cli.command()
@@ -108,9 +104,9 @@ def clear():
 def list(group):
     try:
         collection = api.get_all(group=group)
-        for group in collection.groups():
-            click.echo(click.style(group, fg='cyan'))
-            for snippet in collection.get_group(group):
+        for grp in collection.groups():
+            click.echo(click.style(grp, fg='cyan'))
+            for snippet in collection.get_group(grp):
                 name = _add_tab('Name - {}'.format(snippet.name))
                 desc = _add_tab('Description - {}'.format(snippet.description))
                 content = _add_tab(snippet.content)
@@ -119,7 +115,7 @@ def list(group):
                 click.secho(content, fg='yellow')
                 click.echo('\n')
     except LookupError:
-        _error('No such group {}'.format(group))
+        _error('No such group {}'.format(grp))
 
 
 def _add_tab(text):

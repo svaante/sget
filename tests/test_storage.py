@@ -5,8 +5,7 @@ import pytest
 import toml
 
 
-from sget.storage import Storage
-from sget.config import config
+from sget.storage import Storage, AmbiguousNameError, NameNotFoundError
 
 
 SNIPPETS = {'foo': {'content': 'foo',
@@ -14,7 +13,7 @@ SNIPPETS = {'foo': {'content': 'foo',
                     'groups': ['baz', 'bar']},
             'tmp': {'content': 'tmp',
                     'description': 'tmp',
-                    'groups': 'tmp'}}
+                    'groups': ['tmp']}}
 
 @pytest.fixture
 def temp_file():
@@ -77,7 +76,7 @@ def test_clear(temp_file):
 
 def test_get_snippet(temp_file):
     storage = Storage(temp_file)
-    snippet = storage.get_snippet('tmp', partial_match=True)
+    snippet = storage.get_snippet('tmp', partial_match=False)
     assert snippet.name == 'tmp'
 
 
@@ -86,3 +85,18 @@ def test_get_snippet_partial_name(temp_file):
     snippet = storage.get_snippet('fo', partial_match=True)
     assert snippet.name == 'foo'
 
+
+def test_get_non_existent_name(temp_file):
+    storage = Storage(temp_file)
+    with pytest.raises(NameNotFoundError):
+        storage.get_snippet('foobaz')
+
+
+def test_get_ambiguous_name(temp_file):
+    storage = Storage(temp_file)
+    storage.add_snippet(content='fooz',
+                        description='foz',
+                        name='fooz',
+                        groups=['foz'])
+    with pytest.raises(AmbiguousNameError):
+        storage.get_snippet('fo', partial_match=True)
