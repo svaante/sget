@@ -1,3 +1,5 @@
+import re
+
 class Snippet():
     def __init__(self, content, description, name, groups=None):
         self._content = content
@@ -6,7 +8,6 @@ class Snippet():
         if not groups:
             groups = []
         self._groups = groups
-        self._is_template = Snippet.is_template(content)
 
     @property
     def content(self):
@@ -24,9 +25,15 @@ class Snippet():
     def groups(self):
         return self._groups
 
-    @property
-    def is_template(self):
-        return self._is_template
+    def get_vars(self):
+        return re.findall(r'\$_\w+', self._content)
+
+    def insert_vars(self, subs):
+        def repl(_):
+            repl.i += 1
+            return subs[repl.i - 1]
+        repl.i = 0
+        self._content = re.sub(r'\$_\w+', repl, self._content)
 
     def to_dict(self):
         return {'content': self.content,
@@ -40,17 +47,12 @@ class Snippet():
     @staticmethod
     def from_dict(data, name):
         content = data['content']
-        is_template = Snippet.is_template(content)
         description = data['description']
         groups = data.get('groups')
         return Snippet(content=content,
                        description=description,
                        name=name,
                        groups=groups)
-
-    @staticmethod
-    def is_template(content):
-        return '<$>' in content
 
 
 class SnippetCollection():
@@ -108,4 +110,3 @@ class SnippetCollection():
         for name, snippet in snippet_dict.items():
             collection.add(Snippet.from_dict(snippet, name))
         return collection
-

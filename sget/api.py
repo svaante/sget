@@ -32,12 +32,9 @@ def install(snippets_file):
 
 def get(name=None):
     snippet = _get_snippet(name)
-    if snippet.is_template:
-        content = prompt.fill_template(snippet.content)
-        snippet = Snippet(content,
-                          name=snippet.name,
-                          description=snippet.description,
-                          groups=snippet.groups)
+    vars = snippet.get_vars()
+    if len(vars) > 0:
+        snippet = prompt.substitute_vars(snippet, vars)
     return snippet
 
 
