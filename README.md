@@ -6,14 +6,14 @@
 ```bash
 curl https://github.com/ONordander/sget/releases/download/v0.1/sget_v0.1_linux_x86-64.tar.gz -o sget_v0.1_linux_x86-64.tar.gz
 tar -xzvf sget_v0.1_linux_x86-64.tar.gz
-mv sget /usr/local/bin/sget
+mv -vn sget /usr/local/bin/sget
 ```
 
 ## INSTALL MacOS
 ```bash
 curl https://github.com/ONordander/sget/releases/download/v0.1/sget_v0.1_darwin_386.tar.gz -o sget_v0.1_darwin_386.tar.gz
 tar -xzvf sget_v0.1_darwin_386.tar.gz
-mv sget /usr/local/bin/sget
+mv -vn sget /usr/local/bin/sget
 ```
 
 ## INSTALL WITH GIT AND PIP
