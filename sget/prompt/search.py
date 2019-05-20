@@ -1,11 +1,12 @@
+import re
+
+
 from prompt_toolkit.completion import FuzzyCompleter, Completion
 from prompt_toolkit.completion.fuzzy_completer import _FuzzyMatch
 from prompt_toolkit.layout.menus import _get_menu_item_fragments
 from prompt_toolkit.layout.controls import UIControl, UIContent
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.buffer import Document
-
-import re
 
 
 def _content_match(snippet, word):
@@ -52,22 +53,20 @@ class SnippetSearcher(FuzzyCompleter):
         self.search_mode = list(SnippetSearcher.SEARCH_MODES.keys())[self._mode_idx]
         self.match = SnippetSearcher.SEARCH_MODES[self.search_mode]
 
-    def get_completions(self, doc, event):
-        prompt_content = doc.text_before_cursor
-        text, groups = SnippetSearcher._parse_group_filters(prompt_content)
+    def get_completions(self, document, complete_event):
+        prompt_content = document.text_before_cursor
+        text, groups = SnippetSearcher.parse_group_filters(prompt_content)
         offset = len(prompt_content) - len(text)
-        doc_text = doc.text[offset:doc.cursor_position - len(text)]
-        cursor_pos = doc.cursor_position - len(text) - offset
+        doc_text = document.text[offset:document.cursor_position - len(text)]
+        cursor_pos = document.cursor_position - len(text) - offset
         doc2 = Document(text=doc_text, cursor_position=cursor_pos)
 
-        completions = self._get_fuzzy_completions(self._get_completions(doc2,
-                                                                        event,
-                                                                        groups),
-                                                  text)
+        word_completions = self._get_completions(doc2, groups)
+        completions = self._to_fuzzy_completions(word_completions, text)
         return completions
 
     @staticmethod
-    def _parse_group_filters(text):
+    def parse_group_filters(text):
         filtered_groups = []
         rest_text = text
         if text.startswith('group='):
@@ -77,7 +76,7 @@ class SnippetSearcher(FuzzyCompleter):
             filtered_groups = groups.split(',')
         return rest_text, filtered_groups
 
-    def _get_completions(self, doc, event, filter_groups):
+    def _get_completions(self, doc, filter_groups):
         word = doc.get_word_before_cursor().strip()
         snippets = self._snippets
         if filter_groups:
@@ -91,7 +90,7 @@ class SnippetSearcher(FuzzyCompleter):
                              style='fg:white bg:black',
                              selected_style='bg:green')
 
-    def _get_fuzzy_completions(self, completions, word):
+    def _to_fuzzy_completions(self, completions, word):
         fuzzy_matches = []
         pat = '.*?'.join(map(re.escape, word))
         pat = '(?=({0}))'.format(pat)
@@ -126,9 +125,6 @@ class SnippetSearcher(FuzzyCompleter):
 
 
 class SearchControl(UIControl):
-    def has_focus(self):
-        return False
-
     def create_content(self, width, height):
         complete_state = get_app().current_buffer.complete_state
         if complete_state:

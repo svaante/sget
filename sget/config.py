@@ -22,16 +22,16 @@ class Config():
             os.mkdir(self.root_dir)
 
     def _parse_cfg(self):
-        with open(self.file, 'r') as f:
-            cfg = toml.loads(f.read())
+        with open(self.file, 'r') as open_file:
+            cfg = toml.loads(open_file.read())
             if 'sget' not in cfg:
                 msg = 'Error parsing config file, missing section \'sget\'.'
                 raise ValueError(msg)
             return cfg
 
     def _create_cfg(self):
-        with open(self.file, 'w') as f:
-            f.write(toml.dumps(DEFAULT_CONFIG))
+        with open(self.file, 'w') as open_file:
+            open_file.write(toml.dumps(DEFAULT_CONFIG))
         return DEFAULT_CONFIG
 
     def _get(self, key):
@@ -55,4 +55,4 @@ class Config():
 
 
 
-config = Config()
+CONFIG = Config()

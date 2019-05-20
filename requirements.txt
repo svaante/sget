@@ -1,0 +1,4 @@
+Click==7.0
+Pyperclip==1.7.0
+toml==0.10.0
+prompt_toolkit==2.0.8

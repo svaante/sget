@@ -1,63 +1,84 @@
-import click
+import pyperclip
 
 
-from sget import storage
-from sget.snippet import Snippet
+from sget.config import CONFIG
 from sget.prompt import prompt
+from sget.snippet import Snippet
+from sget.storage import Storage, AmbiguousNameError, SnippetNotFoundError
+from sget import tty
+
+
+STORAGE = Storage(CONFIG.snippet_file)
 
 
 def get_all(group=None):
-    collection = storage.get_all_snippets()
+    collection = STORAGE.get_all_snippets()
     if group is not None:
         return collection.get_group(group)
-    else:
-        return collection
+    return collection
 
 
 def add(content, description, name, groups):
-    storage.add_snippet(content, description, name, groups)
+    STORAGE.add_snippet(content, description, name, groups)
 
 
 def fadd(snippet_file, description, name, groups):
-    storage.add_snippet(''.join(snippet_file.readlines()),
+    STORAGE.add_snippet(''.join(snippet_file.readlines()),
                         description,
                         name,
                         groups)
 
 
+def edit_snippets():
+    tty.edit(CONFIG.snippet_file)
+
+
 def install(snippets_file):
-    errors = storage.install_from_file(snippets_file)
+    errors = STORAGE.install_from_file(snippets_file)
     return errors
 
 
-def get(name=None):
+def run(name=None):
     snippet = _get_snippet(name)
     vars = snippet.get_vars()
     if len(vars) > 0:
         snippet = prompt.substitute_vars(snippet, vars)
-    return snippet
+    return tty.put_text(snippet)
 
+  
+def cp(name=None):
+    snippet = _get_snippet(name)
+    _snippet_to_clipboard(snippet)
+
+    
 
 def rm(name=None):
     snippet = _get_snippet(name)
-    storage.rm_snippet(snippet)
+    STORAGE.rm_snippet(snippet.name)
 
 
-def clear(name=None):
-    storage.clear_snippets()
+def clear():
+    STORAGE.clear_snippets()
 
 
 def _get_snippet(name=None):
     if not name:
         snippet = _query_snippet()
     else:
-        snippet = storage.get_snippet(name)
+        try:
+            snippet = STORAGE.get_snippet(name)
+        except AmbiguousNameError:
+            snippet = _query_snippet()
     return snippet
 
 
+def _snippet_to_clipboard(snippet):
+    pyperclip.copy(snippet.content)
+
+
 def _query_snippet():
-    snippets = storage.get_all_snippets()
+    snippets = STORAGE.get_all_snippets()
     snippet = prompt.select_snippet(snippets)
     if not snippet:
-        raise LookupError('No matching snippet found!')
+        raise SnippetNotFoundError()
     return snippet
